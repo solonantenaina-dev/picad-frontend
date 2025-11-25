@@ -30,6 +30,7 @@ export default function RootLayout({
       <body
         className={`${geist.variable} ${geistMono.variable} font-sans antialiased`}
       >
+        {/* La navbar sera masquée sur la page login grâce au composant Navbar lui-même */}
         <Navbar />
         <main>{children}</main>
       </body>
