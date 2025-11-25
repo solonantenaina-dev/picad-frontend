@@ -18,24 +18,6 @@ interface SearchFilterData {
   filter: FilterOption;
 }
 
-interface FormSubmissionData {
-  searchFilter: SearchFilterData;
-  attachment: {
-    file: File | null;
-    fileName: string | null;
-    fileSize: number | null;
-    fileType: string | null;
-  };
-  editorContent: {
-    html: string;
-    plainText: string;
-  };
-  metadata: {
-    submittedAt: Date;
-    submittedBy?: string;
-  };
-}
-
 export default function HomePage() {
   const [file, setFile] = useState<File | null>(null);
   const [editorHtml, setEditorHtml] = useState("");
@@ -60,37 +42,6 @@ export default function HomePage() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setSubmitResult(null);
-
-    const submissionData: FormSubmissionData = {
-      searchFilter: searchFilterData || {
-        query: "",
-        filter: { value: "commune", label: "Commune" },
-      },
-      attachment: {
-        file: file,
-        fileName: file?.name || null,
-        fileSize: file?.size || null,
-        fileType: file?.type || null,
-      },
-      editorContent: {
-        html: editorHtml,
-        plainText: editorPlainText,
-      },
-      metadata: {
-        submittedAt: new Date(),
-      },
-    };
-
-    console.log("=== DONNÉES SOUMISES ===");
-    console.log("Filtre de recherche:", submissionData.searchFilter);
-    console.log("Fichier PDF:", submissionData.attachment);
-    console.log("Contenu texte (HTML):", submissionData.editorContent.html);
-    console.log(
-      "Contenu texte (Plain):",
-      submissionData.editorContent.plainText
-    );
-    console.log("Métadonnées:", submissionData.metadata);
-    console.log("========================");
 
     // Simulation d'envoi
     await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -118,6 +69,9 @@ export default function HomePage() {
     setSubmitResult(null);
   };
 
+  const dynamicText =
+    "Bienvenue dans la prise de note de réunion. Vous pouvez saisir vos commentaires, ajouter des fichiers et filtrer par commune.";
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50/50 to-background">
       <div className="container mx-auto px-4 py-8">
@@ -127,10 +81,7 @@ export default function HomePage() {
             Prise de note de la réunion
           </h1>
           <div className="mt-2 h-1 w-[150px] rounded bg-green-600" />
-          <p className="mt-4 text-muted-foreground">
-            dummy text of the printing and typesetting industry. Lorem Ipsum has
-            been the industry's st
-          </p>
+          <p className="mt-4 text-muted-foreground">{dynamicText}</p>
         </div>
 
         {/* Search Filter */}
@@ -140,14 +91,12 @@ export default function HomePage() {
 
         {/* Form Card */}
         <div className="rounded-xl border border-border bg-background shadow-sm overflow-hidden">
-          {/* Green Header */}
           <div className="bg-green-600 px-6 py-4">
             <h2 className="text-xl font-semibold text-white">
               Formulaire de saisie
             </h2>
           </div>
 
-          {/* Form Content */}
           <div className="p-6 space-y-6">
             <FileUpload onFileChange={setFile} />
             <TextEditor onChange={handleEditorChange} />
@@ -165,7 +114,6 @@ export default function HomePage() {
               </div>
             )}
 
-            {/* Action Buttons */}
             <div className="flex items-center justify-end gap-4 pt-4">
               <Button
                 variant="ghost"
@@ -194,6 +142,11 @@ export default function HomePage() {
               </Button>
             </div>
           </div>
+        </div>
+
+        {/* Footer Div */}
+        <div className="mt-6 p-4 border-t border-gray-200 text-sm text-muted-foreground">
+          Nombre total de notes enregistrées: 45 (données simulées)
         </div>
       </div>
     </div>

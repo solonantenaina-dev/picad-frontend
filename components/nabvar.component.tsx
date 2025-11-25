@@ -40,14 +40,15 @@ export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
 
+  // Déplacer tous les hooks AVANT toute condition de rendu
+  const [selectedLang, setSelectedLang] = useState("FRA");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
   // Masquer la navbar sur la page de login
   if (pathname === "/login") {
     return null;
   }
-
-  const [selectedLang, setSelectedLang] = useState("FRA");
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleLogout = () => {
     // Supprimer le token d'authentification

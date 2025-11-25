@@ -322,7 +322,7 @@ export default function LeafletMap({ onAreaSelect }: LeafletMapProps) {
     name: string;
   } | null>(null);
   const [bounds, setBounds] = useState<L.LatLngBounds | null>(null);
-  const [showLabels, setShowLabels] = useState(true);
+  const [showLabels, setShowLabels] = useState(false);
 
   // GeoJSON data states
   const [regionsData, setRegionsData] = useState<FeatureCollection | null>(
