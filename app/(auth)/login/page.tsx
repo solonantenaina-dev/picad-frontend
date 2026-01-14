@@ -86,27 +86,42 @@ export default function LoginPage() {
       return;
     }
 
-    // Simulation de connexion
-    try {
-      console.log("Tentative de connexion avec:", formData);
+  // Simulation de connexion
+  try {
+    const response = await fetch(
+      "https://n8n.itdcmada.com/webhook-test/auth/login",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      }
+    );
 
-      // Ici vous ajouterez votre logique d'authentification réelle
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Créer un cookie d'authentification (à remplacer par votre logique réelle)
-      document.cookie = "auth-token=simulated-token; path=/; max-age=86400"; // 24 heures
-
-      // Redirection après connexion réussie
-      router.push("/");
-    } catch (error) {
-      console.error("Erreur de connexion:", error);
-    } finally {
-      setIsSubmitting(false);
+    if (!response.ok) {
+      throw new Error("Email ou mot de passe incorrect");
     }
-  };
 
-  const isFormValid =
-    !errors.email && !errors.password && formData.email && formData.password;
+    const data = await response.json();
+
+    // Exemple : token renvoyé par n8n
+    document.cookie = `auth-token=${data.token}; path=/; max-age=86400`;
+
+    router.push("/");
+  } catch (error) {
+    console.error(error);
+    alert("Connexion échouée");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+const isFormValid =
+  !errors.email && !errors.password && formData.email && formData.password;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-green-100 py-12 px-4 sm:px-6 lg:px-8">

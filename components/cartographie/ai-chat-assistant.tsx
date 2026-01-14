@@ -1,8 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+/* =======================
+   Types
+======================= */
 
 interface Message {
   id: string;
@@ -10,6 +14,20 @@ interface Message {
   sender: "bot" | "user";
   timestamp: Date;
 }
+
+interface ChatRequest {
+  message: string;
+}
+
+interface ChatResponse {
+  response?: string;
+  output?: string;
+  error?: string;
+}
+
+/* =======================
+   Icons
+======================= */
 
 function XIcon({ className }: { className?: string }) {
   return (
@@ -69,174 +87,177 @@ function BotIcon({ className }: { className?: string }) {
   );
 }
 
+/* =======================
+   Config
+======================= */
+
+const N8N_WEBHOOK_URL =
+  process.env.NEXT_PUBLIC_N8N_CHAT_WEBHOOK_URL ||
+  "https://n8n.itdcmada.com/webhook-test/chat";
+
+/* =======================
+   Component
+======================= */
+
 export default function AIChatAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      content:
-        "Bonjour, bienvenu(e) Mr Faneva, en quoi puis-je vous aider aujourd'hui ?",
-      sender: "bot",
-      timestamp: new Date(),
-    },
-    {
-      id: "2",
-      content:
-        "Je veux obtenir un rapport sur les doléances récentes de Fianarantsoa.",
-      sender: "user",
-      timestamp: new Date(),
-    },
-    {
-      id: "3",
-      content:
-        "Bien sûr ! Je peux vous générer un résumé thématique ou un rapport détaillé avec cartes et statistiques. Que souhaitez-vous recevoir ?",
-      sender: "bot",
-      timestamp: new Date(),
-    },
-    {
-      id: "4",
-      content: "Résumé thématique.",
-      sender: "user",
-      timestamp: new Date(),
-    },
-    {
-      id: "5",
-      content: "Reflexion... Lorem ipsum dolor sit",
-      sender: "bot",
-      timestamp: new Date(),
-    },
-  ]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const handleSend = () => {
-    if (!message.trim()) return;
+  /* Auto-scroll */
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      content: message,
+  /* =======================
+     Send message
+  ======================= */
+
+  const handleSend = async () => {
+    if (!message.trim() || isLoading) return;
+
+    const userMessage: Message = {
+      id: crypto.randomUUID(),
+      content: message.trim(),
       sender: "user",
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, newMessage]);
-    setMessage("");
-
-    setTimeout(() => {
-      const botResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        content: "Je traite votre demande...",
+    setMessages((prev) => [
+      ...prev,
+      userMessage,
+      {
+        id: "typing",
+        content: "Je réfléchis...",
         sender: "bot",
         timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, botResponse]);
-    }, 1000);
+      },
+    ]);
+
+    const currentMessage = message.trim();
+    setMessage("");
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(N8N_WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: currentMessage } as ChatRequest),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP ${response.status}`);
+      }
+
+      const data = (await response.json()) as ChatResponse;
+
+      const botText =
+        data.response ??
+        data.output ??
+        data.resultText ??
+        "Désolé, je n'ai pas pu traiter votre demande.";
+      
+        console.log("Webhook response:", data);
+
+
+
+      setMessages((prev) => [
+        ...prev.filter((msg) => msg.id !== "typing"),
+        { id: crypto.randomUUID(), content: botText, sender: "bot", timestamp: new Date() },
+      ]);
+    } catch (error) {
+      setMessages((prev) =>
+        prev
+          .filter((msg) => msg.id !== "typing")
+          .concat({
+            id: crypto.randomUUID(),
+            content:
+              error instanceof Error
+                ? `Désolé, une erreur s'est produite : ${error.message}`
+                : "Désolé, une erreur s'est produite.",
+            sender: "bot",
+            timestamp: new Date(),
+          })
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  /* =======================
+     Render
+  ======================= */
 
   return (
     <>
+      {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 w-96 bg-background border border-border rounded-2xl shadow-xl overflow-hidden z-50">
+        <div className="fixed bottom-24 right-6 w-96 bg-background border rounded-2xl shadow-xl z-50 overflow-hidden">
           {/* Header */}
-          <div className="bg-green-600 text-white px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <BotIcon className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="font-semibold">AI Chat Assistant</h3>
-                <p className="text-xs text-green-100 flex items-center gap-1">
-                  En ligne
-                  <span className="inline-block w-2 h-2 bg-green-300 rounded-full animate-pulse" />
-                </p>
-              </div>
+          <div className="bg-green-600 text-white px-4 py-3 flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <BotIcon className="h-6 w-6" />
+              <span className="font-semibold">AI Assistant</span>
             </div>
             <Button
-              variant="ghost"
               size="icon"
+              variant="ghost"
+              className="text-white"
               onClick={() => setIsOpen(false)}
-              className="text-white hover:bg-white/20"
             >
               <XIcon className="h-5 w-5" />
             </Button>
           </div>
 
           {/* Messages */}
-          <div className="h-80 overflow-y-auto p-4 space-y-4 bg-green-50">
+          <div className="h-80 overflow-y-auto p-4 bg-green-50 space-y-3">
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex items-end gap-2 ${
-                  msg.sender === "user" ? "flex-row-reverse" : ""
+                className={`flex ${
+                  msg.sender === "user" ? "justify-end" : "justify-start"
                 }`}
               >
-                {msg.sender === "bot" && (
-                  <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center shrink-0">
-                    <BotIcon className="h-4 w-4 text-white" />
-                  </div>
-                )}
-                {msg.sender === "user" && (
-                  <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center shrink-0">
-                    <span className="text-white text-sm font-medium">F</span>
-                  </div>
-                )}
                 <div
-                  className={`max-w-[75%] px-4 py-2 rounded-2xl text-sm ${
-                    msg.sender === "bot"
-                      ? "bg-white text-foreground rounded-bl-none"
-                      : "bg-green-600 text-white rounded-br-none"
+                  className={`max-w-[75%] px-4 py-2 rounded-xl text-sm ${
+                    msg.sender === "user"
+                      ? "bg-green-600 text-white"
+                      : "bg-white text-gray-800"
                   }`}
                 >
                   {msg.content}
-                  {msg.sender === "bot" &&
-                    msg.content.includes("Reflexion") && (
-                      <div className="flex gap-1 mt-1">
-                        <span
-                          className="w-2 h-2 bg-green-600 rounded-full animate-bounce"
-                          style={{ animationDelay: "0ms" }}
-                        />
-                        <span
-                          className="w-2 h-2 bg-green-600 rounded-full animate-bounce"
-                          style={{ animationDelay: "150ms" }}
-                        />
-                        <span
-                          className="w-2 h-2 bg-green-600 rounded-full animate-bounce"
-                          style={{ animationDelay: "300ms" }}
-                        />
-                      </div>
-                    )}
                 </div>
               </div>
             ))}
+            <div ref={messagesEndRef} />
           </div>
 
           {/* Input */}
-          <div className="p-4 bg-background border-t border-border">
-            <div className="flex items-center gap-2">
-              <Input
-                type="text"
-                placeholder="Ecrire un message..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                className="flex-1"
-              />
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={handleSend}
-                className="text-green-600 hover:text-green-700 hover:bg-green-50"
-              >
-                <SendIcon className="h-5 w-5" />
-              </Button>
-            </div>
+          <div className="p-4 border-t bg-background flex gap-2">
+            <Input
+              placeholder="Écrire un message..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              disabled={isLoading}
+            />
+            <Button
+              onClick={handleSend}
+              disabled={isLoading || !message.trim()}
+              className="bg-green-600 text-white"
+            >
+              <SendIcon className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       )}
 
       {/* Floating Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-green-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-green-700 transition-colors z-50 ring-4 ring-green-200"
+        onClick={() => setIsOpen(true)}
+        className="fixed bottom-6 right-6 w-14 h-14 bg-green-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-green-700 transition"
       >
         <BotIcon className="h-7 w-7" />
       </button>
