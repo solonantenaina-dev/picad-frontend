@@ -24,77 +24,107 @@ export default function HomePage() {
   const [editorPlainText, setEditorPlainText] = useState("");
   const [searchFilterData, setSearchFilterData] =
     useState<SearchFilterData | null>(null);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<{
     success: boolean;
     message: string;
   } | null>(null);
 
-  const handleEditorChange = useCallback((html: string, plainText: string) => {
-    setEditorHtml(html);
-    setEditorPlainText(plainText);
-  }, []);
+  const handleEditorChange = useCallback(
+    (html: string, plainText: string) => {
+      setEditorHtml(html);
+      setEditorPlainText(plainText);
+    },
+    []
+  );
 
   const handleSearchFilterChange = useCallback((data: SearchFilterData) => {
     setSearchFilterData(data);
   }, []);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     setIsSubmitting(true);
     setSubmitResult(null);
-
-    // Simulation d'envoi
-    await new Promise((resolve) => setTimeout(resolve, 1500));
 
     if (!editorPlainText.trim()) {
       setSubmitResult({
         success: false,
-        message: "Le contenu de l'éditeur ne peut pas être vide",
+        message: "Le contenu de la note est obligatoire",
       });
-    } else {
-      setSubmitResult({
-        success: true,
-        message: "Formulaire soumis avec succès",
-      });
+      setIsSubmitting(false);
+      return;
     }
 
-    setIsSubmitting(false);
-  };
+    try {
+      const formData = new FormData();
 
-  const handleCancel = () => {
-    setFile(null);
-    setEditorHtml("");
-    setEditorPlainText("");
-    setSearchFilterData(null);
-    setSubmitResult(null);
-  };
+      formData.append("content_html", editorHtml);
+      formData.append("content_text", editorPlainText);
 
-  const dynamicText =
-    "Bienvenue dans la prise de note de réunion. Vous pouvez saisir vos commentaires, ajouter des fichiers et filtrer par commune.";
+      if (searchFilterData) {
+        formData.append("search_query", searchFilterData.query);
+        formData.append("filter_value", searchFilterData.filter.value);
+        formData.append("filter_label", searchFilterData.filter.label);
+      }
+
+      if (file) {
+        formData.append("file", file);
+      }
+
+      const response = await fetch(
+        "https://n8n.itdcmada.com/webhook-test/documents/create",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Erreur d’envoi");
+      }
+
+      setSubmitResult({
+        success: true,
+        message: "Note envoyée avec succès",
+      });
+
+      setFile(null);
+      setEditorHtml("");
+      setEditorPlainText("");
+      setSearchFilterData(null);
+    } catch (error) {
+      setSubmitResult({
+        success: false,
+        message: "Échec de l’envoi vers le serveur",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50/50 to-background">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-foreground">
+          <h1 className="text-3xl font-bold text-foreground mb-2">
             Prise de note de la réunion
           </h1>
-          <div className="mt-2 h-1 w-[150px] rounded bg-green-600" />
-          <p className="mt-4 text-muted-foreground">{dynamicText}</p>
+          <div className="w-24 h-1 bg-green-600 mb-3" />
+          <p className="text-muted-foreground text-sm">
+            dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's st
+          </p>
         </div>
 
-        {/* Search Filter */}
-        <div className="mb-8">
-          <SearchFilter onSearch={handleSearchFilterChange} />
-        </div>
+        <SearchFilter onSearch={handleSearchFilterChange} />
 
-        {/* Form Card */}
-        <div className="rounded-xl border border-border bg-background shadow-sm overflow-hidden">
-          <div className="bg-green-600 px-6 py-4">
-            <h2 className="text-xl font-semibold text-white">
-              Formulaire de saisie
-            </h2>
+        <form
+          onSubmit={handleSubmit}
+          className="mt-8 rounded-xl border bg-background shadow-sm"
+        >
+          <div className="bg-green-600 px-6 py-4 text-white font-semibold">
+            Formulaire de saisie
           </div>
 
           <div className="p-6 space-y-6">
@@ -104,29 +134,35 @@ export default function HomePage() {
             {submitResult && (
               <div
                 className={cn(
-                  "p-4 rounded-lg",
+                  "p-4 rounded",
                   submitResult.success
-                    ? "bg-green-50 text-green-700 border border-green-200"
-                    : "bg-red-50 text-red-700 border border-red-200"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-red-100 text-red-700"
                 )}
               >
                 {submitResult.message}
               </div>
             )}
 
-            <div className="flex items-center justify-end gap-4 pt-4">
+            <div className="flex gap-4 justify-end">
               <Button
-                variant="ghost"
-                onClick={handleCancel}
-                className="text-muted-foreground hover:text-foreground"
-                disabled={isSubmitting}
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setFile(null);
+                  setEditorHtml("");
+                  setEditorPlainText("");
+                  setSearchFilterData(null);
+                  setSubmitResult(null);
+                }}
+                className="bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
               >
                 Annuler
               </Button>
               <Button
-                onClick={handleSubmit}
+                type="submit"
                 disabled={isSubmitting}
-                className="bg-green-600 hover:bg-green-700 text-white px-8"
+                className="bg-green-600 text-white hover:bg-green-700"
               >
                 {isSubmitting ? (
                   <>
@@ -142,13 +178,9 @@ export default function HomePage() {
               </Button>
             </div>
           </div>
-        </div>
-
-        {/* Footer Div */}
-        <div className="mt-6 p-4 border-t border-gray-200 text-sm text-muted-foreground">
-          Nombre total de notes enregistrées: 45 (données simulées)
-        </div>
+        </form>
       </div>
     </div>
   );
 }
+

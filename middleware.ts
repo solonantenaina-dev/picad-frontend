@@ -15,6 +15,7 @@ export function middleware(request: NextRequest) {
   // Routes qui ne nécessitent pas d'authentification
   const publicRoutes = [
     "/login",
+    "/inscription",
     "/register",
     "/api/auth",
     "/api/webhook", // Routes de webhook pour N8N
@@ -30,8 +31,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Si l'utilisateur est connecté et tente d'accéder à la page login
-  if (isAuthenticated(request) && pathname === "/login") {
+  // Si l'utilisateur est connecté et tente d'accéder à la page login ou inscription
+  if (isAuthenticated(request) && (pathname === "/login" || pathname === "/inscription")) {
     const homeUrl = new URL("/", request.url);
     return NextResponse.redirect(homeUrl);
   }

@@ -22,6 +22,7 @@ interface ChatRequest {
 interface ChatResponse {
   response?: string;
   output?: string;
+  resultText?: string;
   error?: string;
 }
 

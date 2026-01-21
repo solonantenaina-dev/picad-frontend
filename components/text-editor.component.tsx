@@ -77,13 +77,7 @@ const backgroundColors = [
   { value: "#E6E6E6", label: "Gris clair" },
 ];
 
-const defaultContent = `<p style="color: #16a34a; font-weight: 600; font-size: 18px;">Welcome to Kendimed Text Editor Text Editor!</p>
-<p style="color: #374151;">Lorem ipsum dolor sit amet consectetur adipiscing elit Ut et massa mi. Aliquam in hendrerit urna. Pellentesque sit amet sapien.</p>
-<ul style="color: #374151;">
-  <li>Lorem ipsum dolor sit amet consectetur adipiscing.</li>
-  <li>Lorem ipsum dolor sit amet consectetur adipiscing.</li>
-  <li>Lorem ipsum dolor sit amet consectetur adipiscing.</li>
-</ul>`;
+const defaultContent = ``;
 
 export function TextEditor({ value, onChange }: TextEditorProps) {
   const [fontSize, setFontSize] = useState(14);
@@ -257,7 +251,7 @@ export function TextEditor({ value, onChange }: TextEditorProps) {
     colors: typeof textColors;
     selectedColor: string;
     onSelect: (color: string) => void;
-    icon: React.ElementType;
+    icon: React.ComponentType<{ className?: string }>;
     title: string;
   }) => (
     <Popover>

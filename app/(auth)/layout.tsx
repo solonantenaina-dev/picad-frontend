@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Connexion - Module de Gestion",
+  title: "Authentification - Module de Gestion",
 };
 
 export default function AuthLayout({

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
@@ -86,8 +87,7 @@ export default function LoginPage() {
       return;
     }
 
-  // Simulation de connexion
-  try {
+    try {
     const response = await fetch(
       "https://n8n.itdcmada.com/webhook-test/auth/login",
       {
@@ -244,6 +244,17 @@ const isFormValid =
             </button>
           </div>
         </form>
+
+        {/* Lien vers l'inscription */}
+        <div className="text-center text-sm mt-6">
+          <span className="text-gray-600">Pas encore de compte ? </span>
+          <Link
+            href="/inscription"
+            className="font-medium text-green-600 hover:text-green-500 transition-colors"
+          >
+            S'inscrire
+          </Link>
+        </div>
       </div>
     </div>
   );

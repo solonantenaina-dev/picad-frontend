@@ -69,7 +69,7 @@ export default function FloatingShape({
           color={color}
           emissive={color}
           emissiveIntensity={0.5}
-          wobble={0.3}
+          factor={0.3}
           wireframe={false}
         />
       </Sphere>
@@ -80,7 +80,7 @@ export default function FloatingShape({
           color={color}
           emissive={color}
           emissiveIntensity={0.5}
-          wobble={0.2}
+          factor={0.2}
           wireframe={false}
         />
       </Torus>
@@ -91,7 +91,7 @@ export default function FloatingShape({
           color={color}
           emissive={color}
           emissiveIntensity={0.5}
-          wobble={0.25}
+          factor={0.25}
           wireframe={false}
         />
       </Octahedron>
@@ -102,7 +102,7 @@ export default function FloatingShape({
           color={color}
           emissive={color}
           emissiveIntensity={0.5}
-          wobble={0.3}
+          factor={0.3}
           wireframe={false}
         />
       </Icosahedron>
@@ -113,7 +113,7 @@ export default function FloatingShape({
           color={color}
           emissive={color}
           emissiveIntensity={0.5}
-          wobble={0.2}
+          factor={0.2}
           wireframe={false}
         />
       </Dodecahedron>
