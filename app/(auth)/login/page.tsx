@@ -89,7 +89,7 @@ export default function LoginPage() {
 
     try {
     const response = await fetch(
-      "https://n8n.itdcmada.com/webhook-test/auth/login",
+      "https://n8n.itdcmada.com/webhook/auth/login",
       {
         method: "POST",
         headers: {

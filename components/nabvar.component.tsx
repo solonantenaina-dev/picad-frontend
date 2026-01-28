@@ -45,8 +45,8 @@ export function Navbar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  // Masquer la navbar sur la page de login
-  if (pathname === "/login") {
+  // Masquer la navbar sur les pages d'authentification (login et inscription)
+  if (pathname === "/login" || pathname === "/inscription") {
     return null;
   }
 
