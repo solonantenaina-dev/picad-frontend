@@ -2,21 +2,11 @@
 
 import { useState, useCallback } from "react";
 import { TextEditor } from "@/components/text-editor.component";
-import { SearchFilter } from "@/components/search-filter.component";
+import { SearchFilter, type SearchFilterData } from "@/components/search-filter.component";
 import { FileUpload } from "@/components/file-upload.component";
 import { Button } from "@/components/ui/button";
 import { Send, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface FilterOption {
-  value: string;
-  label: string;
-}
-
-interface SearchFilterData {
-  query: string;
-  filter: FilterOption;
-}
 
 export default function HomePage() {
   const [file, setFile] = useState<File | null>(null);
@@ -67,6 +57,15 @@ export default function HomePage() {
         formData.append("search_query", searchFilterData.query);
         formData.append("filter_value", searchFilterData.filter.value);
         formData.append("filter_label", searchFilterData.filter.label);
+        if (searchFilterData.location) {
+          formData.append("location_nom", searchFilterData.location.nom);
+          formData.append("location_ville", searchFilterData.location.ville);
+          formData.append("location_region", searchFilterData.location.region);
+          formData.append("location_commune", searchFilterData.location.commune);
+          formData.append("location_lat", searchFilterData.location.lat);
+          formData.append("location_lon", searchFilterData.location.lon);
+          formData.append("location_display_name", searchFilterData.location.display_name);
+        }
       }
 
       if (file) {
@@ -74,7 +73,7 @@ export default function HomePage() {
       }
 
       const response = await fetch(
-        "https://n8n.itdcmada.com/webhook-test/test",
+        "https://n8n.itdcmada.com/webhook-test/documents/create",
         {
           method: "POST",
           body: formData,
@@ -112,9 +111,6 @@ export default function HomePage() {
             Prise de note de la réunion
           </h1>
           <div className="w-24 h-1 bg-green-600 mb-3" />
-          <p className="text-muted-foreground text-sm">
-            dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's st
-          </p>
         </div>
 
         <SearchFilter onSearch={handleSearchFilterChange} />

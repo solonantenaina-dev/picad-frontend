@@ -20,6 +20,8 @@ export function middleware(request: NextRequest) {
     "/api/auth",
     "/api/webhook", // Routes de webhook pour N8N
     "/api/chat", // Routes de chat
+    "/api/nominatim", // Proxy recherche lieux (Zone intervention)
+    "/api/geo", // Liste régions/communes
   ];
   const isPublicRoute = publicRoutes.some((route) =>
     pathname.startsWith(route)

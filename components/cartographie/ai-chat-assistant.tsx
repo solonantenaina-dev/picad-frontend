@@ -94,7 +94,7 @@ function BotIcon({ className }: { className?: string }) {
 
 const N8N_WEBHOOK_URL =
   process.env.NEXT_PUBLIC_N8N_CHAT_WEBHOOK_URL ||
-  "https://n8n.itdcmada.com/webhook/chat";
+  "https://n8n.itdcmada.com/webhook-test/chat";
 
 /* =======================
    Component
@@ -159,10 +159,6 @@ export default function AIChatAssistant() {
         data.output ??
         data.resultText ??
         "Désolé, je n'ai pas pu traiter votre demande.";
-      
-        console.log("Webhook response:", data);
-
-
 
       setMessages((prev) => [
         ...prev.filter((msg) => msg.id !== "typing"),
