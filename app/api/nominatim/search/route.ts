@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       headers: {
         Accept: "application/json",
         "Accept-Language": "fr",
-        "User-Agent": "PicadFrontend/1.0 (https://itdcmada.com; contact@example.com)",
+        "User-Agent": "PicadFrontend/1.0 (+https://itdcmada.com)",
       },
     });
 

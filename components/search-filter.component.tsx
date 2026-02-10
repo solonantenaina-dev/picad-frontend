@@ -63,6 +63,74 @@ interface SearchResult {
   data: RegionItem | DistrictItem | CommuneItem | NominatimPlace;
 }
 
+async function fetchJsonOrThrow<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
+  const res = await fetch(input, init);
+  const contentType = res.headers.get("content-type") ?? "";
+  const rawText = await res.text();
+
+  if (!res.ok) {
+    // Souvent un 404 renvoie une page HTML (non JSON) -> éviter JSON.parse qui plante.
+    const snippet = rawText.slice(0, 500);
+    throw new Error(
+      `HTTP ${res.status} ${res.statusText} — content-type: ${contentType || "n/a"} — body: ${snippet}`
+    );
+  }
+
+  try {
+    // Certains serveurs renvoient JSON avec un content-type non standard.
+    // Trim les espaces et caractères de contrôle avant de parser
+    let cleanedText = rawText.trim().replace(/[\x00-\x1F\x7F]/g, '');
+    
+    // Si le texte commence par [ ou {, essayer de trouver la fin valide du JSON
+    if ((cleanedText.startsWith('[') || cleanedText.startsWith('{')) && cleanedText.length > 0) {
+      let braceCount = 0;
+      let bracketCount = 0;
+      let inString = false;
+      let escapeNext = false;
+      
+      for (let i = 0; i < cleanedText.length; i++) {
+        const char = cleanedText[i];
+        
+        if (escapeNext) {
+          escapeNext = false;
+          continue;
+        }
+        
+        if (char === '\\') {
+          escapeNext = true;
+          continue;
+        }
+        
+        if (char === '"') {
+          inString = !inString;
+          continue;
+        }
+        
+        if (!inString) {
+          if (char === '{') braceCount++;
+          else if (char === '}') braceCount--;
+          else if (char === '[') bracketCount++;
+          else if (char === ']') bracketCount--;
+          
+          // Si tous les braces/brackets sont fermés, on a la fin du JSON valide
+          if (braceCount === 0 && bracketCount === 0 && (char === '}' || char === ']')) {
+            cleanedText = cleanedText.slice(0, i + 1);
+            break;
+          }
+        }
+      }
+    }
+    
+    return JSON.parse(cleanedText) as T;
+  } catch (e) {
+    const snippet = rawText.slice(0, 800);
+    throw new Error(
+      `Réponse non-JSON (content-type: ${contentType || "n/a"}). ` +
+        `Impossible de parser. Extrait: ${snippet}`
+    );
+  }
+}
+
 interface SearchFilterProps {
   onSearch?: (data: SearchFilterData) => void;
   countryCodes?: string;
@@ -132,15 +200,7 @@ export function SearchFilter({ onSearch, countryCodes = "mg" }: SearchFilterProp
     if (localRegions.length > 0) return;
     setIsLoadingRegions(true);
     try {
-      const res = await fetch("/api/geo/regions");
-      if (!res.ok) {
-        console.error(`Erreur API régions: ${res.status} ${res.statusText}`);
-        const errorData = await res.json().catch(() => ({}));
-        console.error("Détails:", errorData);
-        setLocalRegions([]);
-        return;
-      }
-      const data = (await res.json()) as RegionItem[];
+      const data = await fetchJsonOrThrow<RegionItem[]>("/api/geo/regions");
       setLocalRegions(data);
       console.log(`Chargé ${data.length} régions`);
     } catch (error) {
@@ -155,13 +215,7 @@ export function SearchFilter({ onSearch, countryCodes = "mg" }: SearchFilterProp
     if (localDistricts.length > 0) return;
     setIsLoadingDistricts(true);
     try {
-      const res = await fetch("/api/geo/districts");
-      if (!res.ok) {
-        console.error(`Erreur API districts: ${res.status} ${res.statusText}`);
-        setLocalDistricts([]);
-        return;
-      }
-      const data = (await res.json()) as DistrictItem[];
+      const data = await fetchJsonOrThrow<DistrictItem[]>("/api/geo/districts");
       setLocalDistricts(data);
       console.log(`Chargé ${data.length} districts`);
     } catch (error) {
@@ -176,13 +230,7 @@ export function SearchFilter({ onSearch, countryCodes = "mg" }: SearchFilterProp
     if (localCommunes.length > 0) return;
     setIsLoadingCommunes(true);
     try {
-      const res = await fetch("/api/geo/communes");
-      if (!res.ok) {
-        console.error(`Erreur API communes: ${res.status} ${res.statusText}`);
-        setLocalCommunes([]);
-        return;
-      }
-      const data = (await res.json()) as CommuneItem[];
+      const data = await fetchJsonOrThrow<CommuneItem[]>("/api/geo/communes");
       setLocalCommunes(data);
       console.log(`Chargé ${data.length} communes`);
     } catch (error) {
