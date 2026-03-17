@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
-import { MapContainer, GeoJSON, useMap, ZoomControl } from "react-leaflet";
+import { MapContainer, GeoJSON, useMap, CircleMarker, Popup } from "react-leaflet";
 import type {
   LatLngBoundsExpression,
   Layer,
@@ -19,6 +19,12 @@ import type {
 } from "geojson";
 import { Button } from "@/components/ui/button";
 import "leaflet/dist/leaflet.css";
+import type { ThematicLayers } from "./layers-panel";
+
+/** Webhook n8n (POST) qui renvoie directement le JSON du rapport */
+const N8N_VILLE_WEBHOOK_URL =
+  process.env.NEXT_PUBLIC_N8N_VILLE_WEBHOOK_URL ||
+  "https://n8n.itdcmada.com/webhook-test/ville";
 
 // Icons
 function PlusIcon({ className }: { className?: string }) {
@@ -159,14 +165,14 @@ function LabelsLayer({
             iconSize: [100, 20],
           }),
           interactive: false,
-        } as any);
+        } as L.MarkerOptions);
 
-        label.addTo(labelsRef.current);
-      } catch (error) {
-        console.warn("Erreur lors de la création du label:", error);
+        labelsRef.current.addLayer(label);
+      } catch (err) {
+        console.error("Erreur création label :", err);
       }
     });
-  }, [data, viewLevel, showLabels]);
+  }, [data, map, showLabels, viewLevel]);
 
   return null;
 }
@@ -309,9 +315,120 @@ function ZoomControls() {
 
 interface LeafletMapProps {
   onAreaSelect?: (area: { id: string; name: string; level: string }) => void;
+  layers?: ThematicLayers;
 }
 
-export default function LeafletMap({ onAreaSelect }: LeafletMapProps) {
+type RagLevel = "Critique" | "Modérée" | "Stable" | "—";
+
+function ragDotClass(level: RagLevel): string {
+  switch (level) {
+    case "Critique":
+      return "bg-red-500";
+    case "Modérée":
+      return "bg-orange-500";
+    case "Stable":
+      return "bg-green-500";
+    default:
+      return "bg-gray-300";
+  }
+}
+
+function ragFillColor(level: RagLevel): string {
+  switch (level) {
+    case "Critique":
+      return "#ef4444"; // red-500
+    case "Modérée":
+      return "#f97316"; // orange-500
+    case "Stable":
+      return "#22c55e"; // green-500
+    default:
+      return "#9ca3af"; // gray-400
+  }
+}
+
+function computeSectorLevel(total?: number, critiques?: number): RagLevel {
+  const t = typeof total === "number" ? total : 0;
+  const c = typeof critiques === "number" ? critiques : 0;
+  if (t <= 0) return "—";
+  const ratio = c / t;
+  if (ratio >= 0.5) return "Critique";
+  if (ratio >= 0.2) return "Modérée";
+  return "Stable";
+}
+
+type N8nVilleReport = {
+  rag?: {
+    sante?: { total?: number; critiques?: number };
+    education?: { total?: number; critiques?: number };
+    autres?: { total?: number; critiques?: number };
+  };
+  statutGlobal?: string;
+  [key: string]: unknown;
+};
+
+async function fetchVilleReport(ville: string): Promise<N8nVilleReport> {
+  const response = await fetch(N8N_VILLE_WEBHOOK_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ ville }),
+  });
+  const contentType = response.headers.get("content-type") ?? "";
+  const rawText = await response.text();
+  if (!response.ok) {
+    throw new Error(`n8n HTTP ${response.status} ${response.statusText} — ${rawText.slice(0, 300)}`);
+  }
+  if (contentType.includes("application/json")) {
+    return JSON.parse(rawText) as N8nVilleReport;
+  }
+  return {};
+}
+
+async function sendRegionToN8n(region: string): Promise<unknown> {
+  if (!region?.trim()) return {};
+  const response = await fetch("/api/n8n/region", {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: region.trim(),
+  });
+  const rawText = await response.text();
+  if (!response.ok) {
+    throw new Error(`n8n region HTTP ${response.status} — ${rawText.slice(0, 300)}`);
+  }
+  try {
+    return JSON.parse(rawText);
+  } catch {
+    return rawText;
+  }
+}
+
+async function sendDistrictToN8n(district: string): Promise<unknown> {
+  if (!district?.trim()) return {};
+  const response = await fetch("/api/n8n/district", {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: district.trim(),
+  });
+  const rawText = await response.text();
+  if (!response.ok) {
+    throw new Error(`n8n district HTTP ${response.status} — ${rawText.slice(0, 300)}`);
+  }
+  try {
+    return JSON.parse(rawText);
+  } catch {
+    return rawText;
+  }
+}
+
+function hashToOffset(seed: string, magnitude = 0.06): { dLat: number; dLng: number } {
+  // Petit offset déterministe pour éviter la superposition parfaite des points.
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  const a = (h % 1000) / 1000; // 0..1
+  const b = ((h / 1000) % 1000) / 1000;
+  return { dLat: (a - 0.5) * magnitude, dLng: (b - 0.5) * magnitude };
+}
+
+export default function LeafletMap({ onAreaSelect, layers }: LeafletMapProps) {
   const [viewLevel, setViewLevel] = useState<ViewLevel>("regions");
   const [selectedRegion, setSelectedRegion] = useState<{
     id: string;
@@ -323,6 +440,14 @@ export default function LeafletMap({ onAreaSelect }: LeafletMapProps) {
   } | null>(null);
   const [bounds, setBounds] = useState<L.LatLngBounds | null>(null);
   const [showLabels, setShowLabels] = useState(false);
+  const [lastN8nResult, setLastN8nResult] = useState<
+    {
+      level: "region" | "district" | "commune";
+      name: string;
+      response: unknown;
+      error?: string;
+    } | null
+  >(null);
 
   // GeoJSON data states
   const [regionsData, setRegionsData] = useState<FeatureCollection | null>(
@@ -336,6 +461,11 @@ export default function LeafletMap({ onAreaSelect }: LeafletMapProps) {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // RAG par commune (après filtre thématique) - cache local
+  const ragCacheRef = useRef<Map<string, RagLevel>>(new Map());
+  const [ragById, setRagById] = useState<Record<string, RagLevel>>({});
+  const [ragLoadingIds, setRagLoadingIds] = useState<Set<string>>(new Set());
 
   // Bounds de Madagascar
   const madagascarBounds: LatLngBoundsExpression = [
@@ -433,6 +563,123 @@ export default function LeafletMap({ onAreaSelect }: LeafletMapProps) {
     }
   }, [viewLevel, regionsData, filteredDistricts, filteredCommunes]);
 
+  const thematicPoints = useMemo(() => {
+    const showPointsEau = Boolean(layers?.pointsEau);
+    const showEducations = Boolean(layers?.educations);
+    if (!showPointsEau && !showEducations) return [];
+    if (!currentData?.features?.length) return [];
+
+    return currentData.features
+      .map((feature, idx) => {
+        try {
+          const props = feature.properties as GeoJSONFeatureProperties;
+          const id =
+            (viewLevel === "regions" ? props.ADM1_PCODE : viewLevel === "districts" ? props.ADM2_PCODE : props.ADM3_PCODE) ||
+            String(idx);
+          const name =
+            (viewLevel === "regions" ? props.ADM1_EN : viewLevel === "districts" ? props.ADM2_EN : props.ADM3_EN) ||
+            "Zone";
+
+          const layer = L.geoJSON(feature as Feature<Geometry, GeoJSONFeatureProperties>);
+          const bounds = layer.getBounds();
+          if (!bounds.isValid()) return null;
+          const c = bounds.getCenter();
+          const base = { lat: c.lat, lng: c.lng, id, name };
+          const { dLat, dLng } = hashToOffset(id);
+
+          const points: Array<{ kind: "pointsEau" | "educations"; lat: number; lng: number; id: string; name: string }> = [];
+          if (showPointsEau) points.push({ kind: "pointsEau", lat: base.lat + dLat, lng: base.lng + dLng, id, name });
+          if (showEducations) points.push({ kind: "educations", lat: base.lat - dLat, lng: base.lng - dLng, id, name });
+          return points;
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean)
+      .flat() as Array<{ kind: "pointsEau" | "educations"; lat: number; lng: number; id: string; name: string }>;
+  }, [currentData, layers?.educations, layers?.pointsEau, viewLevel]);
+
+  const activeTheme = useMemo(() => {
+    const a = Boolean(layers?.pointsEau);
+    const b = Boolean(layers?.educations);
+    // Une seule thématique à la fois -> on applique la couleur RAG correspondante
+    if (a && !b) return "pointsEau" as const;
+    if (b && !a) return "educations" as const;
+    return null;
+  }, [layers?.educations, layers?.pointsEau]);
+
+  // Précharger la gravité (RAG) des communes visibles selon la thématique active
+  useEffect(() => {
+    if (viewLevel !== "communes") return;
+    if (!activeTheme) return;
+    if (!currentData?.features?.length) return;
+
+    let cancelled = false;
+
+    const features = currentData.features;
+    const jobs = features
+      .map((feature, idx) => {
+        const props = feature.properties as GeoJSONFeatureProperties;
+        const id = props?.ADM3_PCODE || String(idx);
+        const name = props?.ADM3_EN || "";
+        return { id, name };
+      })
+      .filter((x) => x.id && x.name);
+
+    const missing = jobs.filter(({ id }) => !ragCacheRef.current.has(id) && !ragLoadingIds.has(id));
+    if (missing.length === 0) return;
+
+    // Marquer comme en cours
+    setRagLoadingIds((prev) => {
+      const next = new Set(prev);
+      missing.forEach((m) => next.add(m.id));
+      return next;
+    });
+
+    const run = async () => {
+      const concurrency = 3;
+      let cursor = 0;
+
+      const worker = async () => {
+        while (cursor < missing.length && !cancelled) {
+          const job = missing[cursor++];
+          try {
+            const report = await fetchVilleReport(job.name);
+            const sector =
+              activeTheme === "educations" ? report.rag?.education : report.rag?.sante;
+            const level = computeSectorLevel(sector?.total, sector?.critiques);
+            ragCacheRef.current.set(job.id, level);
+            if (!cancelled) {
+              setRagById((prev) => ({ ...prev, [job.id]: level }));
+            }
+          } catch {
+            // En cas d'erreur, mettre un niveau neutre
+            ragCacheRef.current.set(job.id, "—");
+            if (!cancelled) {
+              setRagById((prev) => ({ ...prev, [job.id]: "—" }));
+            }
+          } finally {
+            if (!cancelled) {
+              setRagLoadingIds((prev) => {
+                const next = new Set(prev);
+                next.delete(job.id);
+                return next;
+              });
+            }
+          }
+        }
+      };
+
+      await Promise.all(Array.from({ length: concurrency }, () => worker()));
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTheme, currentData, ragLoadingIds, viewLevel]);
+
   // Style pour les features GeoJSON
   const getFeatureStyle = useCallback(
     (
@@ -451,12 +698,20 @@ export default function LeafletMap({ onAreaSelect }: LeafletMapProps) {
       const props = feature.properties;
       let fillColor = "#808080";
 
-      if (viewLevel === "regions" && props?.ADM1_PCODE) {
-        fillColor = regionColors[props.ADM1_PCODE] || getColorByIndex(index);
-      } else if (viewLevel === "districts") {
-        fillColor = getColorByIndex(index);
-      } else if (viewLevel === "communes") {
-        fillColor = getColorByIndex(index);
+      // Si une thématique est active, la couleur représente la gravité (RAG)
+      if (activeTheme && viewLevel === "communes") {
+        const id = props?.ADM3_PCODE || String(index);
+        const level = ragCacheRef.current.get(id) ?? ragById[id] ?? "—";
+        fillColor = ragFillColor(level);
+      } else {
+        // Couleurs par défaut (multi-couleurs)
+        if (viewLevel === "regions" && props?.ADM1_PCODE) {
+          fillColor = regionColors[props.ADM1_PCODE] || getColorByIndex(index);
+        } else if (viewLevel === "districts") {
+          fillColor = getColorByIndex(index);
+        } else if (viewLevel === "communes") {
+          fillColor = getColorByIndex(index);
+        }
       }
 
       return {
@@ -467,7 +722,7 @@ export default function LeafletMap({ onAreaSelect }: LeafletMapProps) {
         fillOpacity: 0.7,
       };
     },
-    [viewLevel]
+    [activeTheme, ragById, viewLevel]
   );
 
   // Gestionnaire d'événements pour chaque feature
@@ -517,18 +772,54 @@ export default function LeafletMap({ onAreaSelect }: LeafletMapProps) {
             currentData?.features.findIndex((f) => f === feature) || 0;
           target.setStyle(getFeatureStyle(feature, index));
         },
-        click: (e: LeafletMouseEvent) => {
+        click: async (e: LeafletMouseEvent) => {
           const target = e.target;
           const featureBounds = target.getBounds();
+          let result: unknown = null;
+          let errorMessage: string | undefined;
 
           if (viewLevel === "regions") {
             setSelectedRegion({ id: featureId, name: displayName });
             setViewLevel("districts");
             setBounds(featureBounds);
+            try {
+              result = await sendRegionToN8n(displayName);
+            } catch (err) {
+              errorMessage = err instanceof Error ? err.message : String(err);
+            }
+            setLastN8nResult({
+              level: "region",
+              name: displayName,
+              response: result,
+              error: errorMessage,
+            });
           } else if (viewLevel === "districts") {
             setSelectedDistrict({ id: featureId, name: displayName });
             setViewLevel("communes");
             setBounds(featureBounds);
+            try {
+              result = await sendDistrictToN8n(displayName);
+            } catch (err) {
+              errorMessage = err instanceof Error ? err.message : String(err);
+            }
+            setLastN8nResult({
+              level: "district",
+              name: displayName,
+              response: result,
+              error: errorMessage,
+            });
+          } else if (viewLevel === "communes") {
+            try {
+              result = await fetchVilleReport(displayName);
+            } catch (err) {
+              errorMessage = err instanceof Error ? err.message : String(err);
+            }
+            setLastN8nResult({
+              level: "commune",
+              name: displayName,
+              response: result,
+              error: errorMessage,
+            });
           }
 
           onAreaSelect?.({
@@ -717,6 +1008,30 @@ export default function LeafletMap({ onAreaSelect }: LeafletMapProps) {
               />
             </>
           )}
+
+        {/* Couches thématiques (affichées/masquées via le panel de gauche) */}
+        {thematicPoints.map((p) => (
+          <CircleMarker
+            key={`${p.kind}-${viewLevel}-${p.id}`}
+            center={[p.lat, p.lng]}
+            radius={5}
+            pathOptions={{
+              color: p.kind === "pointsEau" ? "#2563eb" : "#7c3aed",
+              fillColor: p.kind === "pointsEau" ? "#60a5fa" : "#a78bfa",
+              fillOpacity: 0.8,
+              weight: 1,
+            }}
+          >
+            <Popup>
+              <div className="text-sm">
+                <div className="font-semibold">
+                  {p.kind === "pointsEau" ? "Points liés à l’eau" : "Éducations"}
+                </div>
+                <div className="text-gray-600">{p.name}</div>
+              </div>
+            </Popup>
+          </CircleMarker>
+        ))}
       </MapContainer>
     </div>
   );

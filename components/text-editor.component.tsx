@@ -100,12 +100,6 @@ export function TextEditor({ value, onChange }: TextEditorProps) {
     }
   }, [value, isInitialized]);
 
-  const execCommand = useCallback((command: string, value?: string) => {
-    document.execCommand(command, false, value);
-    editorRef.current?.focus();
-    updateActiveStyles();
-  }, []);
-
   const updateActiveStyles = useCallback(() => {
     setActiveStyles({
       bold: document.queryCommandState("bold"),
@@ -114,6 +108,12 @@ export function TextEditor({ value, onChange }: TextEditorProps) {
       strikeThrough: document.queryCommandState("strikeThrough"),
     });
   }, []);
+
+  const execCommand = useCallback((command: string, value?: string) => {
+    document.execCommand(command, false, value);
+    editorRef.current?.focus();
+    updateActiveStyles();
+  }, [updateActiveStyles]);
 
   const handleContentChange = useCallback(() => {
     if (editorRef.current) {

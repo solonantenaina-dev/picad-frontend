@@ -33,8 +33,8 @@ export default function LoginPage() {
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email) return "L'email est requis";
-    if (!emailRegex.test(email)) return "Format d'email invalide";
+    if (!email) return "L&apos;email est requis";
+    if (!emailRegex.test(email)) return "Format d&apos;email invalide";
     return "";
   };
 
@@ -89,7 +89,7 @@ export default function LoginPage() {
 
     try {
     const response = await fetch(
-      "https://n8n.itdcmada.com/webhook-test/auth/login",
+      "https://n8n.itdcmada.com/webhook/auth/login",
       {
         method: "POST",
         headers: {
@@ -252,7 +252,7 @@ const isFormValid =
             href="/inscription"
             className="font-medium text-green-600 hover:text-green-500 transition-colors"
           >
-            S'inscrire
+            S&apos;inscrire
           </Link>
         </div>
       </div>

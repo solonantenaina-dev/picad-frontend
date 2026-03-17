@@ -1,16 +1,21 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
-export default function LayersPanel() {
-  const [layers, setLayers] = useState({
-    pointsEau: false,
-    educations: false,
-  });
+export type ThematicLayers = {
+  pointsEau: boolean;
+  educations: boolean;
+};
 
-  const toggleLayer = (layer: keyof typeof layers) => {
-    setLayers((prev) => ({ ...prev, [layer]: !prev[layer] }));
+export default function LayersPanel({
+  layers,
+  onChange,
+}: {
+  layers: ThematicLayers;
+  onChange: (next: ThematicLayers) => void;
+}) {
+  const toggleLayer = (layer: keyof ThematicLayers) => {
+    onChange({ ...layers, [layer]: !layers[layer] });
   };
 
   return (

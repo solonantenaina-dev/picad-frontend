@@ -83,7 +83,7 @@ export default function HomePage() {
       if (!response.ok) {
         throw new Error("Erreur d’envoi");
       }
-
+      const result = await response.json();
       setSubmitResult({
         success: true,
         message: "Note envoyée avec succès",

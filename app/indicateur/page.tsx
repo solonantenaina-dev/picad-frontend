@@ -25,7 +25,7 @@ export default function HomePage() {
         <div className="flex flex-col">
           <label className="text-sm font-medium text-gray-700 mb-1">Zone géographique</label>
           <select className="w-full mt-1 border border-gray-300 rounded-lg p-2 bg-white focus:border-green-500 focus:ring-1 focus:ring-green-500">
-            <option>— Sélection d'une zone —</option>
+            <option>— Sélection d&apos;une zone —</option>
             <option>Fianarantsoa</option>
             <option>Antananarivo</option>
             <option>Antsirabe</option>

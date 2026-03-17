@@ -243,7 +243,7 @@ export default function LoginForm() {
             href="#"
             className="text-blue-300 hover:text-blue-200 font-medium transition-colors"
           >
-            S\'inscrire
+            S&apos;inscrire
           </a>
         </div>
       </div>

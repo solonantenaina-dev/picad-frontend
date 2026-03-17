@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import type { ThematicLayers } from "./layers-panel";
 
 const LeafletMap = dynamic(() => import("./leaflet-map"), {
   ssr: false,
@@ -19,6 +20,11 @@ const LeafletMap = dynamic(() => import("./leaflet-map"), {
   ),
 });
 
-export default function MadagascarMap() {
-  return <LeafletMap />;
+interface MadagascarMapProps {
+  onAreaSelect?: (area: { id: string; name: string; level: string }) => void;
+  layers?: ThematicLayers;
+}
+
+export default function MadagascarMap({ onAreaSelect, layers }: MadagascarMapProps) {
+  return <LeafletMap onAreaSelect={onAreaSelect} layers={layers} />;
 }

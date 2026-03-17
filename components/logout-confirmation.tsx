@@ -31,7 +31,7 @@ export function LogoutConfirmation({
           </AlertDialogTitle>
           <AlertDialogDescription className="text-black">
             Êtes-vous sûr de vouloir vous déconnecter ? Vous devrez vous
-            reconnecter pour accéder à nouveau à l'application.
+            reconnecter pour accéder à nouveau à l&apos;application.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="flex gap-2 sm:gap-8">
