@@ -1,7 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
-  const ville = (await request.text()).trim();
+  let ville = "";
+  const contentType = request.headers.get("content-type") ?? "";
+
+  if (contentType.includes("application/json")) {
+    const body = await request.json().catch(() => ({}));
+    if (typeof body === "object" && body !== null && "name" in body) {
+      ville = String((body as { name?: unknown }).name ?? "").trim();
+    }
+  } else {
+    ville = (await request.text()).trim();
+  }
 
   if (!ville) {
     return NextResponse.json({ error: "ville est requis" }, { status: 400 });
@@ -12,12 +22,18 @@ export async function POST(request: NextRequest) {
     "https://n8n.itdcmada.com/webhook-test/ville";
 
   try {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    };
+
+    if (process.env.N8N_AUTH_TOKEN) {
+      headers["Authorization"] = `Bearer ${process.env.N8N_AUTH_TOKEN}`;
+    }
+
     const res = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
+      headers,
       body: JSON.stringify({
         level: "ville",
         name: ville,

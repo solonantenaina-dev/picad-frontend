@@ -23,8 +23,9 @@ const LeafletMap = dynamic(() => import("./leaflet-map"), {
 interface MadagascarMapProps {
   onAreaSelect?: (area: { id: string; name: string; level: string }) => void;
   layers?: ThematicLayers;
+  showHeatmap?: boolean;
 }
 
-export default function MadagascarMap({ onAreaSelect, layers }: MadagascarMapProps) {
-  return <LeafletMap onAreaSelect={onAreaSelect} layers={layers} />;
+export default function MadagascarMap({ onAreaSelect, layers, showHeatmap }: MadagascarMapProps) {
+  return <LeafletMap onAreaSelect={onAreaSelect} layers={layers} showHeatmap={showHeatmap} />;
 }

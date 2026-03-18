@@ -17,6 +17,7 @@ export default function LoginPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [apiError, setApiError] = useState<string>("");
 
   // Vérifier si l'utilisateur est déjà connecté
   useEffect(() => {
@@ -88,9 +89,8 @@ export default function LoginPage() {
     }
 
     try {
-    const response = await fetch(
-      "https://n8n.itdcmada.com/webhook/auth/login",
-      {
+      setApiError("");
+      const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -99,26 +99,42 @@ export default function LoginPage() {
           email: formData.email,
           password: formData.password,
         }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        const message =
+          data.error_description || data.error || data.message || "Erreur de connexion au serveur";
+        setApiError(message);
+        return;
       }
-    );
 
-    if (!response.ok) {
-      throw new Error("Email ou mot de passe incorrect");
+      if (data.error) {
+        const message = data.error_description || data.error || "Email ou mot de passe incorrect";
+        setApiError(message);
+        return;
+      }
+
+      const token = data.token || data.access_token || data?.session?.access_token;
+      if (!token) {
+        setApiError("Email ou mot de passe incorrect, réessayez.");
+        return;
+      }
+
+      document.cookie = `auth-token=${token}; path=/; max-age=86400`;
+      router.push("/");
+    } catch (error) {
+      console.error(error);
+      setApiError(
+        error instanceof Error
+          ? error.message
+          : "Erreur de connexion inattendue. Réessayez plus tard."
+      );
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const data = await response.json();
-
-    // Exemple : token renvoyé par n8n
-    document.cookie = `auth-token=${data.token}; path=/; max-age=86400`;
-
-    router.push("/");
-  } catch (error) {
-    console.error(error);
-    alert("Connexion échouée");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
 
 const isFormValid =
   !errors.email && !errors.password && formData.email && formData.password;
@@ -221,6 +237,12 @@ const isFormValid =
               </a>
             </div>
           </div>
+
+          {apiError && (
+            <div className="rounded-md bg-red-50 border border-red-200 p-2 text-red-700 text-sm">
+              {apiError}
+            </div>
+          )}
 
           {/* Bouton de soumission */}
           <div>

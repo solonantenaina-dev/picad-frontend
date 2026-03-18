@@ -12,9 +12,15 @@ export async function POST(request: NextRequest) {
     "https://n8n.itdcmada.com/webhook-test/ville";
 
   try {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+
+    if (process.env.N8N_AUTH_TOKEN) {
+      headers["Authorization"] = `Bearer ${process.env.N8N_AUTH_TOKEN}`;
+    }
+
     const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({
         level: "district",
         name: district,

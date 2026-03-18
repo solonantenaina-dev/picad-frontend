@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { MapContainer, GeoJSON, useMap, CircleMarker, Popup } from "react-leaflet";
+import HeatmapLayer from "./heatmap-layer";
 import type {
   LatLngBoundsExpression,
   Layer,
@@ -24,7 +25,7 @@ import type { ThematicLayers } from "./layers-panel";
 /** Webhook n8n (POST) qui renvoie directement le JSON du rapport */
 const N8N_VILLE_WEBHOOK_URL =
   process.env.NEXT_PUBLIC_N8N_VILLE_WEBHOOK_URL ||
-  "https://n8n.itdcmada.com/webhook-test/ville";
+  "https://n8n.itdcmada.com/webhook/ville";
 
 // Icons
 function PlusIcon({ className }: { className?: string }) {
@@ -316,6 +317,7 @@ function ZoomControls() {
 interface LeafletMapProps {
   onAreaSelect?: (area: { id: string; name: string; level: string }) => void;
   layers?: ThematicLayers;
+  showHeatmap?: boolean;
 }
 
 type RagLevel = "Critique" | "Modérée" | "Stable" | "—";
@@ -428,7 +430,7 @@ function hashToOffset(seed: string, magnitude = 0.06): { dLat: number; dLng: num
   return { dLat: (a - 0.5) * magnitude, dLng: (b - 0.5) * magnitude };
 }
 
-export default function LeafletMap({ onAreaSelect, layers }: LeafletMapProps) {
+export default function LeafletMap({ onAreaSelect, layers, showHeatmap }: LeafletMapProps) {
   const [viewLevel, setViewLevel] = useState<ViewLevel>("regions");
   const [selectedRegion, setSelectedRegion] = useState<{
     id: string;
@@ -598,6 +600,23 @@ export default function LeafletMap({ onAreaSelect, layers }: LeafletMapProps) {
       .filter(Boolean)
       .flat() as Array<{ kind: "pointsEau" | "educations"; lat: number; lng: number; id: string; name: string }>;
   }, [currentData, layers?.educations, layers?.pointsEau, viewLevel]);
+
+  const heatmapPoints = useMemo(() => {
+    if (!currentData?.features?.length) return [];
+    return currentData.features
+      .map((feature, idx) => {
+        try {
+          const layer = L.geoJSON(feature as Feature<Geometry, GeoJSONFeatureProperties>);
+          const bounds = layer.getBounds();
+          if (!bounds.isValid()) return null;
+          const center = bounds.getCenter();
+          return { lat: center.lat, lng: center.lng, score: 60 + (idx % 40) }; // score simulé
+        } catch {
+          return null;
+        }
+      })
+      .filter((x): x is { lat: number; lng: number; score: number } => x !== null);
+  }, [currentData]);
 
   const activeTheme = useMemo(() => {
     const a = Boolean(layers?.pointsEau);
@@ -1010,6 +1029,7 @@ export default function LeafletMap({ onAreaSelect, layers }: LeafletMapProps) {
           )}
 
         {/* Couches thématiques (affichées/masquées via le panel de gauche) */}
+        {showHeatmap && heatmapPoints.length > 0 && <HeatmapLayer data={heatmapPoints} />}
         {thematicPoints.map((p) => (
           <CircleMarker
             key={`${p.kind}-${viewLevel}-${p.id}`}
