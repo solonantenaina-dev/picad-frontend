@@ -30,6 +30,8 @@ type N8nVilleReport = {
   rag?: {
     sante?: { total?: number; critiques?: number; infrastructures?: number };
     education?: { total?: number; critiques?: number; infrastructures?: number };
+    infrastructure?: { total?: number; critiques?: number; infrastructures?: number };
+    agriculture?: { total?: number; critiques?: number; infrastructures?: number };
     autres?: { total?: number; critiques?: number; infrastructures?: number };
   };
   statistiques?: {
@@ -191,6 +193,9 @@ export default function CartographieContent() {
   const [layers, setLayers] = useState<ThematicLayers>({
     pointsEau: false,
     educations: false,
+    sante: false,
+    infrastructure: false,
+    agriculture: false,
   });
 
   const [selectedVille, setSelectedVille] = useState<string>("");
@@ -307,57 +312,107 @@ export default function CartographieContent() {
               <span className="text-xs text-muted-foreground">Visualisation de densité</span>
             </div>
 
-            <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
-              <div style={{ padding: 20, fontFamily: 'Arial, sans-serif' }}>
-                <div className="flex justify-between items-start gap-2">
-                  <div>
-                    <h2 className="text-green-700 text-lg font-bold">
-                      {selectedLevel === 'commune' ? `Commune de ${selectedVille || '...'}` : selectedLevel === 'district' ? `District de ${selectedVille || '...'}` : selectedLevel === 'region' ? `Région de ${selectedVille || '...'}` : 'Sélection de zone'}
-                    </h2>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Dern. maj : {villeReport?.date ?? 'en attente...'}
-                    </p>
+            <div className="bg-white rounded-xl shadow-md p-4 text-sm space-y-4">
+              {/* HEADER */}
+              <div>
+                <h2 className="text-green-700 font-bold text-lg">
+                  Commune de {selectedVille || "..."}
+                </h2>
+                <p className="text-xs text-gray-500">
+                  Dern. maj : {villeReport?.date ?? "04/11/2025"}
+                </p>
+              </div>
+
+              {/* STATUT GLOBAL */}
+              <div>
+                <p className="text-xs font-semibold mb-1">Statut général (RAG)</p>
+                <div className="flex gap-4 text-xs items-center">
+                  <div className="flex items-center gap-1">
+                    <span className="w-3 h-3 rounded-full bg-red-500"></span> Critique
                   </div>
-                  <div className={`text-xs font-semibold px-2 py-1 rounded-full ${statutGlobal === 'Critique' ? 'bg-red-600 text-white' : statutGlobal === 'Modérée' ? 'bg-orange-500 text-white' : statutGlobal === 'Stable' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'}`}>
-                    {statutGlobal || 'Aucun statut'}
+                  <div className="flex items-center gap-1">
+                    <span className="w-3 h-3 rounded-full bg-orange-500"></span> Modérée
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="w-3 h-3 rounded-full bg-green-500"></span> Stable
                   </div>
                 </div>
-
-                {villeReport ? (
-                  <div className="mt-3 text-xs text-muted-foreground space-y-2">
-                    <p>Résumé doléances : {villeReport.resume || "Aucun résumé disponible"}</p>
-                    <p>Statut global : {villeReport.statutGlobal || "—"}</p>
-
-                    <h4 className="font-semibold">Synthèse RAG :</h4>
-                    <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                      <div style={{ width: 10, height: 10, background: "red" }} /> Critique
-                      <div style={{ width: 10, height: 10, background: "orange" }} /> Modérée
-                      <div style={{ width: 10, height: 10, background: "green" }} /> Stable
-                    </div>
-                    <ul className="list-disc pl-5">
-                      <li>Santé : {formatInt(villeReport.rag?.sante?.total)}</li>
-                      <li>Éducation : {formatInt(villeReport.rag?.education?.total)}</li>
-                      <li>Autres : {formatInt(villeReport.rag?.autres?.total)}</li>
-                    </ul>
-
-                    <h4 className="font-semibold">Statistiques :</h4>
-                    <ul className="list-disc pl-5">
-                      <li>Total : {formatInt(villeReport.statistiques?.totalDoleances)}</li>
-                      <li>Taux critique : {formatPercent(villeReport.statistiques?.tauxCritique)}%</li>
-                      <li>Taux résolution : {formatPercent(villeReport.statistiques?.tauxResolution)}%</li>
-                      <li>Tendance : {villeReport.statistiques?.tendance ?? "—"}</li>
-                    </ul>
-                  </div>
-                ) : (
-                  <div className="mt-2 text-xs text-muted-foreground">Cliquez sur une zone pour afficher les données.</div>
-                )}
-
-                {reportError && (
-                  <div className="mt-2 text-xs text-destructive break-words">
-                    Erreur : {reportError}
-                  </div>
-                )}
               </div>
+
+              {/* RESUME */}
+              <div>
+                <h3 className="font-semibold text-sm">Résumé doléances</h3>
+                <p className="text-xs text-gray-600">
+                  {villeReport?.resume || "Aucune donnée"}
+                </p>
+              </div>
+
+              {/* SYNTHÈSE */}
+              <div>
+                <h3 className="font-semibold text-sm">Synthèse RAG</h3>
+                <ul className="text-xs space-y-1">
+                  <li className="flex justify-between">
+                    <span>Santé</span>
+                    <span className="flex items-center gap-2">
+                      <span className="w-3 h-3 bg-red-500 rounded-full"></span>
+                      {formatInt(villeReport?.rag?.sante?.total)}
+                    </span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span>Éducation</span>
+                    <span className="flex items-center gap-2">
+                      <span className="w-3 h-3 bg-green-500 rounded-full"></span>
+                      {formatInt(villeReport?.rag?.education?.total)}
+                    </span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span>Autres</span>
+                    <span className="flex items-center gap-2">
+                      <span className="w-3 h-3 bg-green-500 rounded-full"></span>
+                      {formatInt(villeReport?.rag?.autres?.total)}
+                    </span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span>Infrastructure</span>
+                    <span className="flex items-center gap-2">
+                      <span className="w-3 h-3 bg-orange-500 rounded-full"></span>
+                      {formatInt(villeReport?.rag?.infrastructure?.total)}
+                    </span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span>Agriculture</span>
+                    <span className="flex items-center gap-2">
+                      <span className="w-3 h-3 bg-lime-600 rounded-full"></span>
+                      {formatInt(villeReport?.rag?.agriculture?.total)}
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* STATISTIQUES */}
+              <div>
+                <h3 className="font-semibold text-sm">Statistiques</h3>
+                <ul className="text-xs space-y-1">
+                  <li>Total doléances : {formatInt(villeReport?.statistiques?.totalDoleances)}</li>
+                  <li>Taux critique : {formatPercent(villeReport?.statistiques?.tauxCritique)}</li>
+                  <li>Taux résolution : {formatPercent(villeReport?.statistiques?.tauxResolution)}</li>
+                  <li>Tendance : {villeReport?.statistiques?.tendance ?? "—"}</li>
+                </ul>
+              </div>
+
+              {/* ANALYSE IA */}
+              <div>
+                <h3 className="font-semibold text-sm">Analyse IA</h3>
+                <p className="text-xs text-gray-600">
+                  {villeReport?.analyse || "Analyse non disponible"}
+                </p>
+              </div>
+
+              {reportError && (
+                <div className="mt-2 text-xs text-destructive break-words">
+                  Erreur : {reportError}
+                </div>
+              )}
             </div>
           </div>
         </div>

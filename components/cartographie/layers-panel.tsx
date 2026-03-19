@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 export type ThematicLayers = {
   pointsEau: boolean;
   educations: boolean;
+  sante: boolean;
+  infrastructure: boolean;
+  agriculture: boolean;
 };
 
 export default function LayersPanel({
@@ -58,6 +61,33 @@ export default function LayersPanel({
               onChange={() => toggleLayer("educations")}
             />
             <span className="text-sm text-foreground">Educations</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+              checked={layers.sante}
+              onChange={() => toggleLayer("sante")}
+            />
+            <span className="text-sm text-foreground">Santé</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+              checked={layers.infrastructure}
+              onChange={() => toggleLayer("infrastructure")}
+            />
+            <span className="text-sm text-foreground">Infrastructure</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+              checked={layers.agriculture}
+              onChange={() => toggleLayer("agriculture")}
+            />
+            <span className="text-sm text-foreground">Agriculture</span>
           </div>
         </div>
       </div>

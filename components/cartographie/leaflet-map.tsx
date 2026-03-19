@@ -568,7 +568,11 @@ export default function LeafletMap({ onAreaSelect, layers, showHeatmap }: Leafle
   const thematicPoints = useMemo(() => {
     const showPointsEau = Boolean(layers?.pointsEau);
     const showEducations = Boolean(layers?.educations);
-    if (!showPointsEau && !showEducations) return [];
+    const showSante = Boolean(layers?.sante);
+    const showInfrastructure = Boolean(layers?.infrastructure);
+    const showAgriculture = Boolean(layers?.agriculture);
+    if (!showPointsEau && !showEducations && !showSante && !showInfrastructure && !showAgriculture)
+      return [];
     if (!currentData?.features?.length) return [];
 
     return currentData.features
@@ -589,17 +593,58 @@ export default function LeafletMap({ onAreaSelect, layers, showHeatmap }: Leafle
           const base = { lat: c.lat, lng: c.lng, id, name };
           const { dLat, dLng } = hashToOffset(id);
 
-          const points: Array<{ kind: "pointsEau" | "educations"; lat: number; lng: number; id: string; name: string }> = [];
-          if (showPointsEau) points.push({ kind: "pointsEau", lat: base.lat + dLat, lng: base.lng + dLng, id, name });
-          if (showEducations) points.push({ kind: "educations", lat: base.lat - dLat, lng: base.lng - dLng, id, name });
+          const points: Array<
+            {
+              kind:
+                | "pointsEau"
+                | "educations"
+                | "sante"
+                | "infrastructure"
+                | "agriculture";
+              lat: number;
+              lng: number;
+              id: string;
+              name: string;
+            }
+          > = [];
+          if (showPointsEau)
+            points.push({ kind: "pointsEau", lat: base.lat + dLat, lng: base.lng + dLng, id, name });
+          if (showEducations)
+            points.push({ kind: "educations", lat: base.lat - dLat, lng: base.lng - dLng, id, name });
+          if (showSante)
+            points.push({ kind: "sante", lat: base.lat + dLng, lng: base.lng - dLat, id, name });
+          if (showInfrastructure)
+            points.push({ kind: "infrastructure", lat: base.lat - dLng, lng: base.lng + dLat, id, name });
+          if (showAgriculture)
+            points.push({ kind: "agriculture", lat: base.lat + dLat * 1.2, lng: base.lng + dLng * 1.2, id, name });
+
           return points;
         } catch {
           return null;
         }
       })
       .filter(Boolean)
-      .flat() as Array<{ kind: "pointsEau" | "educations"; lat: number; lng: number; id: string; name: string }>;
-  }, [currentData, layers?.educations, layers?.pointsEau, viewLevel]);
+      .flat() as Array<{
+        kind:
+          | "pointsEau"
+          | "educations"
+          | "sante"
+          | "infrastructure"
+          | "agriculture";
+        lat: number;
+        lng: number;
+        id: string;
+        name: string;
+      }>;
+  }, [
+    currentData,
+    layers?.educations,
+    layers?.pointsEau,
+    layers?.sante,
+    layers?.infrastructure,
+    layers?.agriculture,
+    viewLevel,
+  ]);
 
   const heatmapPoints = useMemo(() => {
     if (!currentData?.features?.length) return [];
@@ -619,13 +664,15 @@ export default function LeafletMap({ onAreaSelect, layers, showHeatmap }: Leafle
   }, [currentData]);
 
   const activeTheme = useMemo(() => {
-    const a = Boolean(layers?.pointsEau);
-    const b = Boolean(layers?.educations);
-    // Une seule thématique à la fois -> on applique la couleur RAG correspondante
-    if (a && !b) return "pointsEau" as const;
-    if (b && !a) return "educations" as const;
+    const hasSante = Boolean(layers?.sante);
+    const hasEducations = Boolean(layers?.educations);
+    const hasPointsEau = Boolean(layers?.pointsEau);
+    // Priorité Santé > Éducation > Eau
+    if (hasSante) return "sante" as const;
+    if (hasEducations) return "educations" as const;
+    if (hasPointsEau) return "pointsEau" as const;
     return null;
-  }, [layers?.educations, layers?.pointsEau]);
+  }, [layers?.sante, layers?.educations, layers?.pointsEau]);
 
   // Précharger la gravité (RAG) des communes visibles selon la thématique active
   useEffect(() => {
@@ -664,8 +711,9 @@ export default function LeafletMap({ onAreaSelect, layers, showHeatmap }: Leafle
           const job = missing[cursor++];
           try {
             const report = await fetchVilleReport(job.name);
-            const sector =
-              activeTheme === "educations" ? report.rag?.education : report.rag?.sante;
+            let sector = report.rag?.sante;
+            if (activeTheme === "educations") sector = report.rag?.education;
+            else if (activeTheme === "pointsEau") sector = report.rag?.autres;
             const level = computeSectorLevel(sector?.total, sector?.critiques);
             ragCacheRef.current.set(job.id, level);
             if (!cancelled) {
@@ -1030,28 +1078,39 @@ export default function LeafletMap({ onAreaSelect, layers, showHeatmap }: Leafle
 
         {/* Couches thématiques (affichées/masquées via le panel de gauche) */}
         {showHeatmap && heatmapPoints.length > 0 && <HeatmapLayer data={heatmapPoints} />}
-        {thematicPoints.map((p) => (
-          <CircleMarker
-            key={`${p.kind}-${viewLevel}-${p.id}`}
-            center={[p.lat, p.lng]}
-            radius={5}
-            pathOptions={{
-              color: p.kind === "pointsEau" ? "#2563eb" : "#7c3aed",
-              fillColor: p.kind === "pointsEau" ? "#60a5fa" : "#a78bfa",
-              fillOpacity: 0.8,
-              weight: 1,
-            }}
-          >
-            <Popup>
-              <div className="text-sm">
-                <div className="font-semibold">
-                  {p.kind === "pointsEau" ? "Points liés à l’eau" : "Éducations"}
+        {thematicPoints.map((p) => {
+          const styleByKind: Record<
+            string,
+            { color: string; fillColor: string; title: string }
+          > = {
+            pointsEau: { color: "#2563eb", fillColor: "#60a5fa", title: "Points liés à l’eau" },
+            educations: { color: "#7c3aed", fillColor: "#a78bfa", title: "Éducations" },
+            sante: { color: "#dc2626", fillColor: "#f87171", title: "Santé" },
+            infrastructure: { color: "#f59e0b", fillColor: "#fbbf24", title: "Infrastructure" },
+            agriculture: { color: "#15803d", fillColor: "#4ade80", title: "Agriculture" },
+          };
+          const style = styleByKind[p.kind] || styleByKind.pointsEau;
+          return (
+            <CircleMarker
+              key={`${p.kind}-${viewLevel}-${p.id}`}
+              center={[p.lat, p.lng]}
+              radius={5}
+              pathOptions={{
+                color: style.color,
+                fillColor: style.fillColor,
+                fillOpacity: 0.8,
+                weight: 1,
+              }}
+            >
+              <Popup>
+                <div className="text-sm">
+                  <div className="font-semibold">{style.title}</div>
+                  <div className="text-gray-600">{p.name}</div>
                 </div>
-                <div className="text-gray-600">{p.name}</div>
-              </div>
-            </Popup>
-          </CircleMarker>
-        ))}
+              </Popup>
+            </CircleMarker>
+          );
+        })}
       </MapContainer>
     </div>
   );
