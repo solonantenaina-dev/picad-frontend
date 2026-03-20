@@ -89,10 +89,12 @@ export default function HomePage() {
         message: "Note envoyée avec succès",
       });
 
+      // Clear form data on success
       setFile(null);
       setEditorHtml("");
       setEditorPlainText("");
       setSearchFilterData(null);
+      setTimeout(() => setSubmitResult(null), 3000);
     } catch (error) {
       setSubmitResult({
         success: false,
@@ -124,7 +126,7 @@ export default function HomePage() {
           </div>
 
           <div className="p-6 space-y-6">
-            <FileUpload onFileChange={setFile} />
+            <FileUpload acceptedTypes={[".pdf", ".doc", ".docx", ".csv"]} onFileChange={setFile} />
             <TextEditor onChange={handleEditorChange} />
 
             {submitResult && (

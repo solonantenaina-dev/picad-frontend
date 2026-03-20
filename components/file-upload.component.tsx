@@ -8,12 +8,12 @@ import { cn } from "@/lib/utils";
 
 interface FileUploadProps {
   onFileChange?: (file: File | null) => void;
-  acceptedTypes?: string[];
+acceptedTypes?: string[];
 }
 
 export function FileUpload({
   onFileChange,
-  acceptedTypes = [".pdf"],
+  acceptedTypes = [".pdf", ".doc", ".docx", ".csv"],
 }: FileUploadProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -98,7 +98,7 @@ export function FileUpload({
             Importer une pièce jointe
           </span>
           <span className="text-xs text-muted-foreground">
-            (PDF uniquement)
+            (PDF, DOC, DOCX, CSV)
           </span>
         </div>
       ) : (

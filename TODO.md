@@ -1,13 +1,24 @@
-# Task: Enable region/district clicks to fetch N8nVilleReport (same format as commune)
+# Add .doc, .docx, .csv to homepage file upload
 
-## Plan Steps
-- [x] 1. Create app/api/n8n/region-report/route.ts (copy ville logic, change level:"region")
-- [x] 2. Create app/api/n8n/district-report/route.ts (copy ville logic, change level:"district")  
-- [x] 3. Edit components/cartographie/cartographie-content.tsx:
-  - Add sendRegionReport() / sendDistrictReport() functions
-  - Update handleMapAreaSelect(): for region/district → fetch report → setVilleReport
-- [ ] 4. Test: npm run dev → click region → verify right panel shows report (same format)
-- [ ] 5. Test district click
-- [ ] 6. attempt_completion
+## Information Gathered:
+- Homepage app/page.tsx uses FileUpload with no acceptedTypes (defaults PDF)
+- FileUpload in components/file-upload.component.tsx defaults `acceptedTypes = [".pdf"]`
+- Validation checks extension against acceptedTypes
+- UI shows "(PDF uniquement)"
 
-**Current progress: ✅ Updated APIs to use dedicated n8n paths (/region, /district). Ready for n8n workflow duplication + test**
+## Plan:
+**components/file-upload.component.tsx**:
+- Update default to [".pdf", ".doc", ".docx", ".csv"]
+- Update UI text to "(PDF, DOC, DOCX, CSV)"
+
+**app/page.tsx**:
+- Pass acceptedTypes={[".pdf", ".doc", ".docx", ".csv"]} to FileUpload
+
+## Dependent Files:
+- components/file-upload.component.tsx
+- app/page.tsx
+
+## Followup steps:
+- Test upload .doc/.docx/.csv files
+- Verify FormData/webhook handles them
+- `npm run dev` + test homepage
