@@ -302,6 +302,18 @@ export default function CartographieContent() {
   const [reportError, setReportError] = useState<string | null>(null);
   const [showHeatmap, setShowHeatmap] = useState(false);
 
+  const selectedArea = useMemo(() => {
+    if (!searchFilterData) return undefined;
+    const filterLevel = searchFilterData.filter.value;
+    if (filterLevel === "region" || filterLevel === "district" || filterLevel === "commune") {
+      const name = searchFilterData.location?.nom || searchFilterData.query.trim();
+      if (name) {
+        return { name, level: filterLevel as "region" | "district" | "commune" };
+      }
+    }
+    return undefined;
+  }, [searchFilterData]);
+
   const handleSearchFilterChange = useCallback((data: SearchFilterData) => {
     setSearchFilterData(data);
   }, []);
@@ -423,7 +435,13 @@ export default function CartographieContent() {
           <LayersPanel layers={layers} onChange={setLayers} />
 
           <div className="flex-1">
-            <MadagascarMap onAreaSelect={handleMapAreaSelect} layers={layers} showHeatmap={showHeatmap} />
+            <MadagascarMap 
+              onAreaSelect={handleMapAreaSelect} 
+              layers={layers} 
+              showHeatmap={showHeatmap}
+              selectedArea={selectedArea} 
+            />
+
           </div>
 
           <div className="w-80 shrink-0">

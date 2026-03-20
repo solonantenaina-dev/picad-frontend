@@ -1,24 +1,10 @@
-# Add .doc, .docx, .csv to homepage file upload
+# Task: Zoom map on SearchFilter "Zone intervention" name selection
 
-## Information Gathered:
-- Homepage app/page.tsx uses FileUpload with no acceptedTypes (defaults PDF)
-- FileUpload in components/file-upload.component.tsx defaults `acceptedTypes = [".pdf"]`
-- Validation checks extension against acceptedTypes
-- UI shows "(PDF uniquement)"
+## TODO Steps:
+- [x] Step 1: Update components/cartographie/madagascar-map.tsx to forward selectedArea prop
+- [x] Step 2: Update components/cartographie/leaflet-map.tsx to handle selectedArea prop and auto-zoom
+- [x] Step 3: Update components/cartographie/cartographie-content.tsx to compute selectedArea from searchFilterData and pass to map
+- [x] Step 4: Test the integration (search select -> map zoom + report)
 
-## Plan:
-**components/file-upload.component.tsx**:
-- Update default to [".pdf", ".doc", ".docx", ".csv"]
-- Update UI text to "(PDF, DOC, DOCX, CSV)"
+## Current Progress: Starting implementation
 
-**app/page.tsx**:
-- Pass acceptedTypes={[".pdf", ".doc", ".docx", ".csv"]} to FileUpload
-
-## Dependent Files:
-- components/file-upload.component.tsx
-- app/page.tsx
-
-## Followup steps:
-- Test upload .doc/.docx/.csv files
-- Verify FormData/webhook handles them
-- `npm run dev` + test homepage

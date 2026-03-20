@@ -318,6 +318,7 @@ interface LeafletMapProps {
   onAreaSelect?: (area: { id: string; name: string; level: string }) => void;
   layers?: ThematicLayers;
   showHeatmap?: boolean;
+  selectedArea?: { name: string; level: "region" | "district" | "commune" };
 }
 
 type RagLevel = "Critique" | "Modérée" | "Stable" | "—";
@@ -430,7 +431,7 @@ function hashToOffset(seed: string, magnitude = 0.06): { dLat: number; dLng: num
   return { dLat: (a - 0.5) * magnitude, dLng: (b - 0.5) * magnitude };
 }
 
-export default function LeafletMap({ onAreaSelect, layers, showHeatmap }: LeafletMapProps) {
+export default function LeafletMap({ onAreaSelect, layers, showHeatmap, selectedArea }: LeafletMapProps) {
   const [viewLevel, setViewLevel] = useState<ViewLevel>("regions");
   const [selectedRegion, setSelectedRegion] = useState<{
     id: string;
@@ -935,6 +936,70 @@ export default function LeafletMap({ onAreaSelect, layers, showHeatmap }: Leafle
     if (selectedDistrict) parts.push(selectedDistrict.name);
     return parts.join(" > ");
   };
+
+  // Auto-zoom to selectedArea from search
+  useEffect(() => {
+    if (!selectedArea || !regionsData || !districtsData || !communesData || loading) return;
+
+    const targetData = selectedArea.level === "region" ? regionsData :
+      selectedArea.level === "district" ? districtsData :
+      communesData;
+    if (!targetData?.features) return;
+
+    // Find feature with exact name match
+    const feature = targetData.features.find(f => {
+      const props = f.properties as GeoJSONFeatureProperties;
+      const name = selectedArea.level === "region" ? props.ADM1_EN :
+        selectedArea.level === "district" ? props.ADM2_EN :
+        props.ADM3_EN;
+      return name?.trim().toLowerCase() === selectedArea.name.trim().toLowerCase();
+    });
+
+    if (!feature) {
+      console.log(`No feature found for ${selectedArea.level}: "${selectedArea.name}"`);
+      return;
+    }
+
+    const layer = L.geoJSON(feature);
+    const featureBounds = layer.getBounds();
+    if (!featureBounds.isValid()) return;
+
+    // Simulate selection logic
+    if (selectedArea.level === "region") {
+      setSelectedRegion({ id: feature.properties?.ADM1_PCODE || "", name: selectedArea.name });
+      setSelectedDistrict(null);
+      setViewLevel("regions"); // Stay at region level for search
+    } else if (selectedArea.level === "district") {
+      // Need region parent - find matching region
+      const regionFeature = regionsData.features.find(r => {
+        return (r.properties as GeoJSONFeatureProperties).ADM1_PCODE === feature.properties?.ADM1_PCODE;
+      });
+      if (regionFeature) {
+        setSelectedRegion({ id: regionFeature.properties?.ADM1_PCODE || "", name: (regionFeature.properties as GeoJSONFeatureProperties).ADM1_EN || "" });
+        setSelectedDistrict({ id: feature.properties?.ADM2_PCODE || "", name: selectedArea.name });
+        setViewLevel("districts");
+      } else {
+        setViewLevel("districts");
+      }
+    } else if (selectedArea.level === "commune") {
+      // Find district parent, then region
+      const districtFeature = districtsData.features.find(d => d.properties?.ADM2_PCODE === feature.properties?.ADM2_PCODE);
+      if (districtFeature) {
+        const regionFeature = regionsData.features.find(r => r.properties?.ADM1_PCODE === districtFeature.properties?.ADM1_PCODE);
+        setSelectedRegion(regionFeature ? { id: regionFeature.properties?.ADM1_PCODE || "", name: (regionFeature.properties as GeoJSONFeatureProperties).ADM1_EN || "" } : null);
+        setSelectedDistrict({ id: districtFeature.properties?.ADM2_PCODE || "", name: (districtFeature.properties as GeoJSONFeatureProperties).ADM2_EN || "" });
+        setViewLevel("communes");
+      } else {
+        setViewLevel("communes");
+      }
+    }
+
+    setBounds(featureBounds);
+    // Trigger onAreaSelect to show report
+    onAreaSelect?.({ id: feature.properties?.[selectedArea.level === "region" ? "ADM1_PCODE" : selectedArea.level === "district" ? "ADM2_PCODE" : "ADM3_PCODE"] || "", name: selectedArea.name, level: selectedArea.level });
+
+    console.log(`Auto-zoomed to ${selectedArea.level}: "${selectedArea.name}"`);
+  }, [selectedArea, regionsData, districtsData, communesData, loading, onAreaSelect]);
 
   // Calculer les bounds quand les données changent
   useEffect(() => {

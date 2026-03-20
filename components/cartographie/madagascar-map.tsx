@@ -24,8 +24,9 @@ interface MadagascarMapProps {
   onAreaSelect?: (area: { id: string; name: string; level: string }) => void;
   layers?: ThematicLayers;
   showHeatmap?: boolean;
+  selectedArea?: { name: string; level: "region" | "district" | "commune" };
 }
 
-export default function MadagascarMap({ onAreaSelect, layers, showHeatmap }: MadagascarMapProps) {
-  return <LeafletMap onAreaSelect={onAreaSelect} layers={layers} showHeatmap={showHeatmap} />;
+export default function MadagascarMap({ onAreaSelect, layers, showHeatmap, selectedArea }: MadagascarMapProps) {
+  return <LeafletMap onAreaSelect={onAreaSelect} layers={layers} showHeatmap={showHeatmap} selectedArea={selectedArea} />;
 }
