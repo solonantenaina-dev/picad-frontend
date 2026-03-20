@@ -995,10 +995,14 @@ export default function LeafletMap({ onAreaSelect, layers, showHeatmap, selected
     }
 
     setBounds(featureBounds);
-    // Trigger onAreaSelect to show report
-    onAreaSelect?.({ id: feature.properties?.[selectedArea.level === "region" ? "ADM1_PCODE" : selectedArea.level === "district" ? "ADM2_PCODE" : "ADM3_PCODE"] || "", name: selectedArea.name, level: selectedArea.level });
+    // Trigger onAreaSelect for report/n8n like map click
+    onAreaSelect?.({ 
+      id: feature.properties?.[selectedArea.level === "region" ? "ADM1_PCODE" : selectedArea.level === "district" ? "ADM2_PCODE" : "ADM3_PCODE"] || "", 
+      name: selectedArea.name, 
+      level: selectedArea.level 
+    });
 
-    console.log(`Auto-zoomed to ${selectedArea.level}: "${selectedArea.name}"`);
+    console.log(`Auto-zoomed + n8n to ${selectedArea.level}: "${selectedArea.name}"`);
   }, [selectedArea, regionsData, districtsData, communesData, loading, onAreaSelect]);
 
   // Calculer les bounds quand les données changent
