@@ -1,105 +1,52 @@
-# Configuration du Webhook N8N pour le Chat
+# n8n Webhook Setup for Multi-Level Reports
 
-Ce document explique comment configurer N8N pour utiliser le système de webhook pour le chat.
+## Current Issue
+- Single webhook path `/webhook-test/ville` → 404 after 1st call (test mode)
+- All levels (region/district/commune) use same path
 
-## Architecture
+## Solution: Create 3 Workflows
 
-Le système fonctionne de la manière suivante :
-
-1. **Frontend** → Envoie une requête à N8N avec un `sessionId` unique et l'URL du webhook de retour
-2. **N8N** → Traite la requête de manière asynchrone
-3. **N8N** → Envoie la réponse via un webhook POST vers `/api/webhook/n8n`
-4. **Frontend** → Récupère la réponse via polling sur `/api/chat/response?sessionId=xxx`
-
-## Configuration N8N
-
-### 1. Webhook de réception (déclencheur)
-
-Créez un nœud **Webhook** dans N8N qui recevra les requêtes du frontend :
-
-- **Méthode** : POST
-- **Path** : `/response` (URL complète : `https://n8n.itdcmada.com/webhook-test/response`)
-- **Response Mode** : Respond to Webhook
-
-### 2. Traitement de la requête
-
-Dans votre workflow N8N, vous recevrez les données suivantes :
-
-```json
-{
-  "message": "Message de l'utilisateur",
-  "sessionId": "chat-1234567890-abc123",
-  "webhookUrl": "https://votre-domaine.com/api/webhook/n8n",
-  "conversationHistory": [
-    { "role": "user", "content": "..." },
-    { "role": "bot", "content": "..." }
-  ]
-}
+### 1. Workflow "ville" (Commune)
+```
+Path: ville  
+Webhook ID: 530a7c07-f4b0-4585-b0ed-47e114c18485 (current)
+Prompt: ... nom de la ville
 ```
 
-### 3. Envoi de la réponse via webhook
-
-À la fin de votre workflow N8N, ajoutez un nœud **HTTP Request** pour envoyer la réponse :
-
-- **Méthode** : POST
-- **URL** : `{{ $json.webhookUrl }}` (ou utilisez directement l'URL : `https://votre-domaine.com/api/webhook/n8n`)
-- **Body** :
-```json
-{
-  "sessionId": "{{ $json.sessionId }}",
-  "response": "Votre réponse ici",
-  "status": "completed"
-}
+### 2. Duplicate → Workflow "region"  
+```
+1. Copy current "ville" workflow
+2. Webhook node → Path: `region`
+3. Edit Fields4 → Prompt: `Génère un rapport pour la **region** : {{ $json.body.name }}`
+4. Save → Execute Workflow → Copy new Webhook URL/ID
 ```
 
-### 4. Gestion des erreurs
-
-En cas d'erreur, envoyez :
-
-```json
-{
-  "sessionId": "{{ $json.sessionId }}",
-  "response": "Message d'erreur",
-  "status": "error"
-}
+### 3. Duplicate → Workflow "district"  
+```
+Path: `district`
+Prompt: `Génère un rapport pour le **district** : {{ $json.body.name }}`
 ```
 
-## Exemple de workflow N8N
-
+## Update .env.local
 ```
-1. Webhook (déclencheur) → Reçoit la requête du frontend
-2. Traitement (IA, API, etc.) → Traite le message
-3. HTTP Request → Envoie la réponse au webhook de retour
-```
-
-## Variables d'environnement
-
-Dans votre fichier `.env.local` :
-
-```env
-NEXT_PUBLIC_N8N_CHAT_WEBHOOK_URL=https://n8n.itdcmada.com/webhook-test/response
+N8N_WEBHOOK_VILLE=https://n8n.itdcmada.com/webhook-test/ville
+N8N_WEBHOOK_REGION=https://n8n.itdcmada.com/webhook-test/region  
+N8N_WEBHOOK_DISTRICT=https://n8n.itdcmada.com/webhook-test/district
 ```
 
-## Format des réponses
-
-Le webhook de retour attend les données suivantes :
-
-- **sessionId** (requis) : L'ID de session fourni dans la requête initiale
-- **response** (requis si status !== "error") : La réponse du bot
-- **status** (optionnel, défaut: "completed") : "pending" | "completed" | "error"
+## Update API Routes (after new webhooks created)
+In `app/api/n8n/region-report/route.ts` → replace URL:
+```ts
+const url = process.env.N8N_WEBHOOK_REGION || "https://n8n.itdcmada.com/webhook-test/region";
+```
+Same for district-report.
 
 ## Test
+```
+1. Create 3 workflows above
+2. Update .env.local
+3. npm run dev
+4. Click map region/district/commune → reports load
+```
 
-Pour tester le système :
-
-1. Envoyez un message depuis le chat
-2. Vérifiez que N8N reçoit la requête avec le `sessionId`
-3. Vérifiez que N8N envoie la réponse au webhook de retour
-4. Le frontend devrait automatiquement récupérer la réponse via polling
-
-## Dépannage
-
-- **La réponse n'apparaît pas** : Vérifiez que N8N envoie bien la réponse au webhook avec le bon `sessionId`
-- **Timeout** : Le polling s'arrête après 5 minutes. Vérifiez que votre workflow N8N répond dans ce délai
-- **Erreurs** : Vérifiez les logs du serveur Next.js et de N8N
-
+Current code **fully implements frontend logic** - just needs n8n side configured for production use.

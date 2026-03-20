@@ -91,6 +91,49 @@ async function sendVilleToN8n(nomVille: string): Promise<N8nVilleReport> {
   }
 }
 
+async function sendRegionReport(nomRegion: string): Promise<N8nVilleReport> {
+  if (!nomRegion?.trim()) {
+    return {
+      commune: nomRegion,
+      statutGlobal: "Erreur",
+      resume: "Nom vide",
+      rag: {},
+      statistiques: {},
+    };
+  }
+
+  const response = await fetch("/api/n8n/region-report", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ name: nomRegion.trim() }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`n8n region-report HTTP ${response.status} — ${error.slice(0, 500)}`);
+  }
+
+  const contentType = response.headers.get("content-type") ?? "";
+  const rawText = await response.text();
+
+  if (contentType.includes("application/json")) {
+    return JSON.parse(rawText) as N8nVilleReport;
+  }
+
+  try {
+    return JSON.parse(rawText);
+  } catch {
+    return {
+      commune: nomRegion,
+      statutGlobal: "Erreur",
+      resume: "Réponse invalide",
+      analyse: rawText,
+      rag: {},
+      statistiques: {},
+    };
+  }
+}
+
 async function sendRegionToN8n(nomRegion: string): Promise<void> {
   if (!nomRegion?.trim()) return;
   try {
@@ -104,6 +147,49 @@ async function sendRegionToN8n(nomRegion: string): Promise<void> {
     }
   } catch (e) {
     console.warn("Erreur envoi région vers n8n:", e);
+  }
+}
+
+async function sendDistrictReport(nomDistrict: string): Promise<N8nVilleReport> {
+  if (!nomDistrict?.trim()) {
+    return {
+      commune: nomDistrict,
+      statutGlobal: "Erreur",
+      resume: "Nom vide",
+      rag: {},
+      statistiques: {},
+    };
+  }
+
+  const response = await fetch("/api/n8n/district-report", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ name: nomDistrict.trim() }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`n8n district-report HTTP ${response.status} — ${error.slice(0, 500)}`);
+  }
+
+  const contentType = response.headers.get("content-type") ?? "";
+  const rawText = await response.text();
+
+  if (contentType.includes("application/json")) {
+    return JSON.parse(rawText) as N8nVilleReport;
+  }
+
+  try {
+    return JSON.parse(rawText);
+  } catch {
+    return {
+      commune: nomDistrict,
+      statutGlobal: "Erreur",
+      resume: "Réponse invalide",
+      analyse: rawText,
+      rag: {},
+      statistiques: {},
+    };
   }
 }
 
@@ -250,25 +336,53 @@ export default function CartographieContent() {
       setSelectedVille(selectedName);
       setSelectedLevel(area.level as "region" | "district" | "commune");
 
-      // 1) Clic région (zoom vers districts) -> envoyer région
+      // 1) Clic région -> fetch region-report + display
       if (area.level === "region") {
-        sendRegionToN8n(selectedName);
+        const regionName = selectedName;
+        setSelectedVille(regionName);
+        setSelectedLevel("region");
         setVilleReport(null);
         setReportError(null);
+        setReportLoading(true);
+        sendRegionToN8n(regionName); // Keep for map zoom/other logic
+        try {
+          const report = await sendRegionReport(regionName);
+          setVilleReport(report);
+        } catch (e) {
+          setReportError(e instanceof Error ? e.message : String(e));
+          setVilleReport(null);
+        } finally {
+          setReportLoading(false);
+        }
         return;
       }
 
-      // 2) Clic district (zoom vers communes) -> envoyer district
+      // 2) Clic district -> fetch district-report + display  
       if (area.level === "district") {
-        sendDistrictToN8n(selectedName);
+        const districtName = selectedName;
+        setSelectedVille(districtName);
+        setSelectedLevel("district");
         setVilleReport(null);
         setReportError(null);
+        setReportLoading(true);
+        sendDistrictToN8n(districtName); // Keep for map zoom/other logic
+        try {
+          const report = await sendDistrictReport(districtName);
+          setVilleReport(report);
+        } catch (e) {
+          setReportError(e instanceof Error ? e.message : String(e));
+          setVilleReport(null);
+        } finally {
+          setReportLoading(false);
+        }
         return;
       }
 
       // 3) Clic commune -> envoyer commune au workflow /ville et afficher le rapport
       if (area.level === "commune") {
         const ville = selectedName;
+        setSelectedVille(ville);
+        setSelectedLevel("commune");
         setVilleReport(null);
         setReportError(null);
         setReportLoading(true);
