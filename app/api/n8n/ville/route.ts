@@ -55,11 +55,34 @@ export async function POST(request: NextRequest) {
       try {
         return NextResponse.json(JSON.parse(rawText));
       } catch {
-        return NextResponse.json({ message: rawText });
+        try {
+          return NextResponse.json(JSON.parse(rawText));
+        } catch {
+          return NextResponse.json({
+            commune: "",
+            statutGlobal: "Erreur",
+            resume: "Réponse invalide",
+            analyse: rawText,
+            rag: {},
+            statistiques: {},
+          });
+        }
       }
     }
 
-    return NextResponse.json({ message: rawText });
+    try {
+      return NextResponse.json(JSON.parse(rawText));
+    } catch {
+      return NextResponse.json({
+        commune: "",
+        statutGlobal: "Erreur",
+        resume: "Réponse invalide",
+        analyse: rawText,
+        rag: {},
+        statistiques: {},
+      });
+    }
+
 
   } catch (e) {
     return NextResponse.json(

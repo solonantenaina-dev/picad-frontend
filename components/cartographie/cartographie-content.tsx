@@ -77,7 +77,18 @@ async function sendVilleToN8n(nomVille: string): Promise<N8nVilleReport> {
     return JSON.parse(rawText) as N8nVilleReport;
   }
 
-  return { message: rawText } as unknown as N8nVilleReport;
+  try {
+    return JSON.parse(rawText);
+  } catch {
+    return {
+      commune: "",
+      statutGlobal: "Erreur",
+      resume: "Réponse invalide",
+      analyse: rawText,
+      rag: {},
+      statistiques: {},
+    };
+  }
 }
 
 async function sendRegionToN8n(nomRegion: string): Promise<void> {
@@ -315,8 +326,8 @@ export default function CartographieContent() {
             <div className="bg-white rounded-xl shadow-md p-4 text-sm space-y-4">
               {/* HEADER */}
               <div>
-                <h2 className="text-green-700 font-bold text-lg">
-                  Commune de {selectedVille || "..."}
+<h2 className="text-green-700 font-bold text-lg">
+                  {selectedLevel ? `${selectedLevel === "commune" ? "Commune" : selectedLevel === "district" ? "District" : "Région"} de ` : "Zone "} {selectedVille || "..."}
                 </h2>
                 <p className="text-xs text-gray-500">
                   Dern. maj : {villeReport?.date ?? "04/11/2025"}
