@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email et mot de passe requis" }, { status: 400 });
     }
 
-    const url = process.env.N8N_AUTH_LOGIN_URL || "https://n8n.itdcmada.com/webhook-test/auth/login";
+    const url = process.env.N8N_AUTH_LOGIN_URL || "https://n8n.itdcmada.com/webhook/auth/login";
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",

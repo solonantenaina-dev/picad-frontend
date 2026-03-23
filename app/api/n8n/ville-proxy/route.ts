@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const N8N_WEBHOOK =
   process.env.N8N_WEBHOOK_URL ||
-  "https://n8n.itdcmada.com/webhook-test/ville";
+  "https://n8n.itdcmada.com/webhook/ville";
 
 export async function POST(req: NextRequest) {
   try {

@@ -73,7 +73,7 @@ export default function HomePage() {
       }
 
       const response = await fetch(
-        "https://n8n.itdcmada.com/webhook-test/documents",
+        "https://n8n.itdcmada.com/webhook/documents",
         {
           method: "POST",
           body: formData,

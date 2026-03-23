@@ -94,7 +94,7 @@ function BotIcon({ className }: { className?: string }) {
 
 const N8N_WEBHOOK_URL =
   process.env.NEXT_PUBLIC_N8N_CHAT_WEBHOOK_URL ||
-  "https://n8n.itdcmada.com/webhook-test/chat";
+  "https://n8n.itdcmada.com/webhook/chat";
 
 /* =======================
    Component

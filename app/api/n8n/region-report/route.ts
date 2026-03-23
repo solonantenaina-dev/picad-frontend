@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
   const url =
     process.env.N8N_WEBHOOK_URL ||
-    "https://n8n.itdcmada.com/webhook-test/region";
+    "https://n8n.itdcmada.com/webhook/region";
 
   try {
     const headers: Record<string, string> = {

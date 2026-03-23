@@ -168,7 +168,7 @@ export default function InscriptionPage() {
 
     try {
       const response = await fetch(
-        "https://n8n.itdcmada.com/webhook-test/auth/register",
+        "https://n8n.itdcmada.com/webhook/auth/register",
         {
           method: "POST",
           headers: {
