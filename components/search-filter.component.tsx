@@ -51,7 +51,7 @@ interface CommuneItem {
 const mainFilterOptions = [
   { value: "commune", label: "Commune" },
   { value: "region", label: "Région" },
-  { value: "zone", label: "Zone" },
+
   { value: "district", label: "District" },
 ];
 
