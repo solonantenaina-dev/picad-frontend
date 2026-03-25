@@ -7,6 +7,7 @@ import { FileUpload } from "@/components/file-upload.component";
 import { Button } from "@/components/ui/button";
 import { Send, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TranslatedText } from "@/components/TranslatedText";
 
 export default function HomePage() {
   const [file, setFile] = useState<File | null>(null);
@@ -18,7 +19,7 @@ export default function HomePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<{
     success: boolean;
-    message: string;
+    message: React.ReactNode;
   } | null>(null);
 
   const handleEditorChange = useCallback(
@@ -38,14 +39,14 @@ export default function HomePage() {
     setIsSubmitting(true);
     setSubmitResult(null);
 
-    if (!editorPlainText.trim()) {
-      setSubmitResult({
-        success: false,
-        message: "Le contenu de la note est obligatoire",
-      });
-      setIsSubmitting(false);
-      return;
-    }
+      if (!editorPlainText.trim()) {
+        setSubmitResult({
+          success: false,
+          message: <TranslatedText text="Le contenu de la note est obligatoire" />,
+        });
+        setIsSubmitting(false);
+        return;
+      }
 
     try {
       const formData = new FormData();
@@ -86,7 +87,7 @@ export default function HomePage() {
       const result = await response.json();
       setSubmitResult({
         success: true,
-        message: "Note envoyée avec succès",
+        message: <TranslatedText text="Note envoyée avec succès" />,
       });
 
       // Clear form data on success
@@ -109,9 +110,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-gradient-to-b from-green-50/50 to-background">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Prise de note de la réunion
-          </h1>
+          <TranslatedText text="Prise de note de la réunion" className="text-3xl font-bold text-foreground mb-2 h1" />
           <div className="w-24 h-1 bg-green-600 mb-3" />
         </div>
 
@@ -121,8 +120,8 @@ export default function HomePage() {
           onSubmit={handleSubmit}
           className="mt-8 rounded-xl border bg-background shadow-sm"
         >
-          <div className="bg-green-600 px-6 py-4 text-white font-semibold">
-            Formulaire de saisie
+            <div className="bg-green-600 px-6 py-4 text-white font-semibold">
+            <TranslatedText text="Formulaire de saisie" />
           </div>
 
           <div className="p-6 space-y-6">
@@ -155,7 +154,7 @@ export default function HomePage() {
                 }}
                 className="bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
               >
-                Annuler
+                <TranslatedText text="Annuler" />
               </Button>
               <Button
                 type="submit"
@@ -165,12 +164,12 @@ export default function HomePage() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Envoi en cours...
+                    <TranslatedText text="Envoi en cours..." />
                   </>
                 ) : (
                   <>
                     <Send className="mr-2 h-4 w-4" />
-                    Soumettre
+                    <TranslatedText text="Soumettre" />
                   </>
                 )}
               </Button>

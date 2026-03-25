@@ -5,6 +5,7 @@ import LayersPanel, { type ThematicLayers } from "./layers-panel";
 import MadagascarMap from "./madagascar-map";
 import AIChatAssistant from "./ai-chat-assistant";
 import { SearchFilter, type SearchFilterData } from "@/components/search-filter.component";
+import { TranslatedText } from "@/components/TranslatedText";
 
 /** Webhook n8n pour envoyer le nom de la ville/commune sélectionnée */
 const N8N_VILLE_WEBHOOK_URL =
@@ -417,9 +418,7 @@ export default function CartographieContent() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="container mx-auto px-6 py-8">
-        <h1 className="text-3xl font-bold text-foreground">
-          Cartographie des doléances
-        </h1>
+        <TranslatedText text="Cartographie des doléances" className="text-2xl font-bold text-foreground h1" />
         <div className="w-24 h-1 bg-green-600 mt-2 mb-4" />
         <p className="text-muted-foreground text-sm">{dynamicText}</p>
 
@@ -450,9 +449,9 @@ export default function CartographieContent() {
                 className={`text-xs px-2 py-1 rounded ${showHeatmap ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'}`}
                 onClick={() => setShowHeatmap((v) => !v)}
               >
-                {showHeatmap ? 'Masquer heatmap' : 'Afficher heatmap'}
+                <TranslatedText text={showHeatmap ? 'Masquer heatmap' : 'Afficher heatmap'} />
               </button>
-              <span className="text-xs text-muted-foreground">Visualisation de densité</span>
+              <TranslatedText text="Visualisation de densité" className="text-xs text-muted-foreground" />
             </div>
 
             <div className="bg-white rounded-xl shadow-md p-4 text-sm space-y-4">

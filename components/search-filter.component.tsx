@@ -17,6 +17,7 @@ import {
   type NominatimPlace,
   type LocationDisplay,
 } from "@/lib/nominatim";
+import { TranslatedText } from "@/components/TranslatedText";
 
 export interface FilterOption {
   value: string;
@@ -572,9 +573,11 @@ export function SearchFilter({ onSearch, countryCodes = "mg" }: SearchFilterProp
           )}
           {!isLoading && !hasAnyResults && (
             <div className="px-4 py-6 text-center text-sm text-muted-foreground">
-              {listMode === "nominatim" || listMode === "mixed"
-                ? "Tapez au moins 2 caractères ou choisissez Région / District / Commune ci-dessus."
-                : "Aucun résultat."}
+              {listMode === "nominatim" || listMode === "mixed" ? (
+                <TranslatedText text="Tapez au moins 2 caractères ou choisissez Région / District / Commune ci-dessus." />
+              ) : (
+                <TranslatedText text="Aucun résultat." />
+              )}
             </div>
           )}
           {!isLoading && hasMixedResults && (

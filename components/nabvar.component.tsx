@@ -22,26 +22,28 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { LogoutConfirmation } from "./logout-confirmation";
+import { useContext } from "react";
+import { LanguageContext } from "@/context/LanguageContext";
+import { useTranslatedNav } from "@/hooks/useTranslatedNav";
+import { TranslatedText } from "@/components/TranslatedText";
 
-const navItems = [
-  { label: "Accueil", href: "/" },
-  { label: "Cartographie", href: "/cartographie" },
-  { label: "Doléances", href: "/doleance" },
-  { label: "Indicateurs", href: "/indicateur" },
-];
 
-const languages = [
-  { code: "FRA", label: "Français" },
-  { code: "ENG", label: "English" },
-  { code: "ESP", label: "Español" },
+// navItems now from hook
+
+  const languages = [
+  { code: "FRA", label: "Français", target: "fr" },
+  { code: "ENG", label: "English", target: "en" },
+  { code: "MLG", label: "Malgache", target: "mg" },
 ];
 
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Déplacer tous les hooks AVANT toute condition de rendu
-  const [selectedLang, setSelectedLang] = useState("FRA");
+  // Context and hooks
+  const { lang, setLang, t } = useContext(LanguageContext);
+  const navItems = useTranslatedNav();
+  const selectedLang = ['fr','en','es'].includes(lang) ? lang.toUpperCase().replace('fr','FRA').replace('en','ENG').replace('es','ESP') : 'FRA';
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
@@ -92,7 +94,7 @@ export function Navbar() {
               {isSearchOpen && (
                 <Input
                   type="text"
-                  placeholder="Rechercher..."
+              placeholder={<TranslatedText text="Rechercher..." />}
                   className="w-64 animate-in slide-in-from-right-2 duration-200"
                   autoFocus
                 />
@@ -100,7 +102,7 @@ export function Navbar() {
               <button
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
                 className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                aria-label={isSearchOpen ? "Fermer la recherche" : "Rechercher"}
+              aria-label={isSearchOpen ? <TranslatedText text="Fermer la recherche" /> : <TranslatedText text="Rechercher" />}
               >
                 {isSearchOpen ? (
                   <X className="h-5 w-5" />
@@ -121,16 +123,16 @@ export function Navbar() {
 
             {/* Language Selector */}
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-2 rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-                <Globe className="h-5 w-5" />
-                <span className="font-medium">{selectedLang}</span>
-                <ChevronDown className="h-4 w-4" />
+              <DropdownMenuTrigger asChild className="flex items-center gap-2 rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                <div className="flex items-center gap-1">
+                  <Globe className="h-5 w-5 flex-shrink-0" />
+                </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {languages.map((lang) => (
                   <DropdownMenuItem
                     key={lang.code}
-                    onClick={() => setSelectedLang(lang.code)}
+                    onClick={() => setLang(lang.target)}
                     className={cn(selectedLang === lang.code && "bg-muted")}
                   >
                     {lang.label}
@@ -149,7 +151,7 @@ export function Navbar() {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem className="cursor-pointer">
                   <User className="h-4 w-4 mr-2" />
-                  Mon profil
+                  <TranslatedText text="Mon profil" />
                 </DropdownMenuItem>
                 <DropdownMenuItem className="cursor-pointer">
                   <svg
@@ -171,7 +173,7 @@ export function Navbar() {
                       d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                     />
                   </svg>
-                  Paramètres
+                  <TranslatedText text="Paramètres" />
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -179,7 +181,7 @@ export function Navbar() {
                   onClick={() => setShowLogoutConfirm(true)}
                 >
                   <LogOut className="h-4 w-4 mr-2" />
-                  Se déconnecter
+                  <TranslatedText text="Se déconnecter" />
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

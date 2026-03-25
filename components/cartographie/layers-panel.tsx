@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { TranslatedText } from "@/components/TranslatedText";
 
 export type ThematicLayers = {
   pointsEau: boolean;
@@ -23,10 +24,10 @@ export default function LayersPanel({
 
   return (
     <div className="w-64 shrink-0">
-      <h2 className="text-xl font-semibold text-green-600 mb-4">Couches</h2>
+      <TranslatedText text="Couches" className="text-xl font-semibold text-green-600 mb-4 h2" />
 
       <Button className="w-full bg-green-600 hover:bg-green-700 text-white mb-6">
-        Import données
+        <TranslatedText text="Import données" />
       </Button>
 
       {/* Thématiques Section - Style simplifié comme dans l'image */}
@@ -38,7 +39,7 @@ export default function LayersPanel({
             checked
             readOnly
           />
-          <span className="text-sm text-foreground">Thématiques</span>
+          <TranslatedText text="Thématiques" className="text-sm text-foreground" />
         </div>
 
         <div className="ml-4 space-y-2">
@@ -49,9 +50,7 @@ export default function LayersPanel({
               checked={layers.pointsEau}
               onChange={() => toggleLayer("pointsEau")}
             />
-            <span className="text-sm text-foreground">
-              Points lié à l&apos;eau
-            </span>
+            <TranslatedText text="Points lié à l'eau" className="text-sm text-foreground" />
           </div>
           <div className="flex items-center gap-2">
             <input
@@ -60,7 +59,7 @@ export default function LayersPanel({
               checked={layers.educations}
               onChange={() => toggleLayer("educations")}
             />
-            <span className="text-sm text-foreground">Educations</span>
+            <TranslatedText text="Educations" className="text-sm text-foreground" />
           </div>
           <div className="flex items-center gap-2">
             <input
@@ -69,7 +68,7 @@ export default function LayersPanel({
               checked={layers.sante}
               onChange={() => toggleLayer("sante")}
             />
-            <span className="text-sm text-foreground">Santé</span>
+            <TranslatedText text="Santé" className="text-sm text-foreground" />
           </div>
           <div className="flex items-center gap-2">
             <input
@@ -78,7 +77,7 @@ export default function LayersPanel({
               checked={layers.infrastructure}
               onChange={() => toggleLayer("infrastructure")}
             />
-            <span className="text-sm text-foreground">Infrastructure</span>
+            <TranslatedText text="Infrastructure" className="text-sm text-foreground" />
           </div>
           <div className="flex items-center gap-2">
             <input
@@ -87,7 +86,7 @@ export default function LayersPanel({
               checked={layers.agriculture}
               onChange={() => toggleLayer("agriculture")}
             />
-            <span className="text-sm text-foreground">Agriculture</span>
+            <TranslatedText text="Agriculture" className="text-sm text-foreground" />
           </div>
         </div>
       </div>

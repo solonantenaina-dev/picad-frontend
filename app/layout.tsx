@@ -2,6 +2,8 @@ import type React from "react";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Navbar } from "@/components/nabvar.component";
+import { LanguageProvider } from "@/context/LanguageContext";
+import { GoogleTranslateWidget } from "@/components/GoogleTranslateScript";
 import "./globals.css";
 
 const geist = Geist({
@@ -22,17 +24,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="fr">
-      <body
-        className={`${geist.variable} ${geistMono.variable} font-sans antialiased`}
-      >
-        {/* La navbar sera masquée sur la page login grâce au composant Navbar lui-même */}
-        <Navbar />
-        <main>{children}</main>
+      <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased`}>
+        {/* 🔹 Le LanguageProvider enveloppe toute l'application */}
+        <LanguageProvider>
+          <Navbar />
+          <main>{children}</main>
+        </LanguageProvider>
       </body>
     </html>
   );
