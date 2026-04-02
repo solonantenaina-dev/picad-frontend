@@ -145,7 +145,7 @@ export function Navbar() {
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border border-gray-200">
                 <User className="h-5 w-5" />
-                <span className="font-medium">Sarobidy</span>
+                <span className="font-medium">Aris</span>
                 <ChevronDown className="h-4 w-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">

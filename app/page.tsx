@@ -85,9 +85,17 @@ export default function HomePage() {
         throw new Error("Erreur d’envoi");
       }
       const result = await response.json();
+      console.log('N8N Submit success:', result);
       setSubmitResult({
         success: true,
-        message: <TranslatedText text="Note envoyée avec succès" />,
+        message: (
+          <div className="space-y-1">
+            <TranslatedText text="Note envoyée avec succès !" />
+            <div className="text-xs text-green-700 bg-green-100 p-2 rounded">
+              ID: {result.id || result.timestamp || 'OK'} | Doléances: {result.total || 'N/A'}
+            </div>
+          </div>
+        ),
       });
 
       // Clear form data on success

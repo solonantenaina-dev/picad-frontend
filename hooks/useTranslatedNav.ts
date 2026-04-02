@@ -8,13 +8,10 @@ export function useTranslatedNav() {
   // Instant sync translations for nav
   const home = t("Accueil");
   const carto = t("Cartographie");
-  const doleance = t("Doléances");
-  const indicateur = t("Indicateurs");
 
   return [
     { label: home, href: "/" },
     { label: carto, href: "/cartographie" },
-    { label: indicateur, href: "/indicateur" },
   ];
 
 }
