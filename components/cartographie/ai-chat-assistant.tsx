@@ -30,6 +30,46 @@ interface ChatResponse {
    Icons
 ======================= */
 
+function MaximizeIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <polyline points="15 3 21 3 21 9" />
+      <polyline points="9 21 3 21 3 15" />
+      <line x1="21" y1="3" x2="14" y2="10" />
+      <line x1="3" y1="21" x2="10" y2="14" />
+    </svg>
+  );
+}
+
+function MinimizeIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <polyline points="4 14 10 14 10 20" />
+      <polyline points="20 10 14 10 14 4" />
+      <line x1="14" y1="10" x2="21" y2="3" />
+      <line x1="3" y1="21" x2="10" y2="14" />
+    </svg>
+  );
+}
+
 function XIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -102,6 +142,7 @@ const N8N_WEBHOOK_URL =
 
 export default function AIChatAssistant() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -191,25 +232,46 @@ export default function AIChatAssistant() {
     <>
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 w-96 bg-background border rounded-2xl shadow-xl z-50 overflow-hidden">
+        <div
+          className={`fixed bottom-24 right-6 bg-background border rounded-2xl shadow-xl z-50 overflow-hidden flex flex-col transition-all duration-300 ease-in-out ${
+            isExpanded
+              ? "w-[600px] h-[700px] max-w-[90vw] max-h-[85vh]"
+              : "w-96 h-[450px]"
+          }`}
+        >
           {/* Header */}
-          <div className="bg-green-600 text-white px-4 py-3 flex justify-between items-center">
+          <div className="bg-green-600 text-white px-4 py-3 flex justify-between items-center shrink-0">
             <div className="flex items-center gap-2">
               <BotIcon className="h-6 w-6" />
               <span className="font-semibold">AI Assistant</span>
             </div>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="text-white"
-              onClick={() => setIsOpen(false)}
-            >
-              <XIcon className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                size="icon"
+                variant="ghost"
+                className="text-white hover:bg-green-700"
+                onClick={() => setIsExpanded((prev) => !prev)}
+                title={isExpanded ? "Réduire" : "Agrandir"}
+              >
+                {isExpanded ? (
+                  <MinimizeIcon className="h-5 w-5" />
+                ) : (
+                  <MaximizeIcon className="h-5 w-5" />
+                )}
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="text-white hover:bg-green-700"
+                onClick={() => setIsOpen(false)}
+              >
+                <XIcon className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
 
           {/* Messages */}
-          <div className="h-80 overflow-y-auto p-4 bg-green-50 space-y-3">
+          <div className="flex-1 overflow-y-auto p-4 bg-green-50 space-y-3 min-h-0">
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -232,7 +294,7 @@ export default function AIChatAssistant() {
           </div>
 
           {/* Input */}
-          <div className="p-4 border-t bg-background flex gap-2">
+          <div className="p-4 border-t bg-background flex gap-2 shrink-0">
             <Input
               placeholder="Écrire un message..."
               value={message}
