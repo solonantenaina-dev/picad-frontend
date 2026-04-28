@@ -457,7 +457,7 @@ export default function CartographieContent() {
             <div className="bg-white rounded-xl shadow-md p-4 text-sm space-y-4">
               {/* HEADER */}
               <div>
-<h2 className="text-green-700 font-bold text-lg">
+                <h2 className="text-green-700 font-bold text-lg">
                   {selectedLevel ? `${selectedLevel === "commune" ? "Commune" : selectedLevel === "district" ? "District" : "Région"} de ` : "Zone "} {selectedVille || "..."}
                 </h2>
                 <p className="text-xs text-gray-500">
@@ -465,90 +465,107 @@ export default function CartographieContent() {
                 </p>
               </div>
 
-              {/* STATUT GLOBAL */}
-              <div>
-                <p className="text-xs font-semibold mb-1">Statut général (RAG)</p>
-                <div className="flex gap-4 text-xs items-center">
-                  <div className="flex items-center gap-1">
-                    <span className="w-3 h-3 rounded-full bg-red-500"></span> Critique
+              {/* LOADING INDICATOR */}
+              {reportLoading && (
+                <div className="flex flex-col items-center justify-center py-8 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-red-500 animate-bounce [animation-delay:-0.3s]" />
+                    <span className="w-3 h-3 rounded-full bg-orange-500 animate-bounce [animation-delay:-0.15s]" />
+                    <span className="w-3 h-3 rounded-full bg-green-500 animate-bounce" />
                   </div>
-                  <div className="flex items-center gap-1">
-                    <span className="w-3 h-3 rounded-full bg-orange-500"></span> Modérée
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="w-3 h-3 rounded-full bg-green-500"></span> Stable
-                  </div>
+                  <p className="text-xs text-gray-500 font-medium">Traitement en cours...</p>
                 </div>
-              </div>
+              )}
 
-              {/* RESUME */}
-              <div>
-                <h3 className="font-semibold text-sm">Résumé doléances</h3>
-                <p className="text-xs text-gray-600">
-                  {villeReport?.resume || "Aucune donnée"}
-                </p>
-              </div>
+              {/* REPORT CONTENT - only show when not loading */}
+              {!reportLoading && (
+                <>
+                  {/* STATUT GLOBAL */}
+                  <div>
+                    <p className="text-xs font-semibold mb-1">Statut général (RAG)</p>
+                    <div className="flex gap-4 text-xs items-center">
+                      <div className="flex items-center gap-1">
+                        <span className="w-3 h-3 rounded-full bg-red-500"></span> Critique
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="w-3 h-3 rounded-full bg-orange-500"></span> Modérée
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="w-3 h-3 rounded-full bg-green-500"></span> Stable
+                      </div>
+                    </div>
+                  </div>
 
-              {/* SYNTHÈSE */}
-              <div>
-                <h3 className="font-semibold text-sm">Synthèse RAG</h3>
-                <ul className="text-xs space-y-1">
-                  <li className="flex justify-between">
-                    <span>Santé</span>
-                    <span className="flex items-center gap-2">
-                      <span className="w-3 h-3 bg-red-500 rounded-full"></span>
-                      {formatInt(villeReport?.rag?.sante?.total)}
-                    </span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span>Éducation</span>
-                    <span className="flex items-center gap-2">
-                      <span className="w-3 h-3 bg-green-500 rounded-full"></span>
-                      {formatInt(villeReport?.rag?.education?.total)}
-                    </span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span>Autres</span>
-                    <span className="flex items-center gap-2">
-                      <span className="w-3 h-3 bg-green-500 rounded-full"></span>
-                      {formatInt(villeReport?.rag?.autres?.total)}
-                    </span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span>Infrastructure</span>
-                    <span className="flex items-center gap-2">
-                      <span className="w-3 h-3 bg-orange-500 rounded-full"></span>
-                      {formatInt(villeReport?.rag?.infrastructure?.total)}
-                    </span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span>Agriculture</span>
-                    <span className="flex items-center gap-2">
-                      <span className="w-3 h-3 bg-lime-600 rounded-full"></span>
-                      {formatInt(villeReport?.rag?.agriculture?.total)}
-                    </span>
-                  </li>
-                </ul>
-              </div>
+                  {/* RESUME */}
+                  <div>
+                    <h3 className="font-semibold text-sm">Résumé doléances</h3>
+                    <p className="text-xs text-gray-600">
+                      {villeReport?.resume || "Aucune donnée"}
+                    </p>
+                  </div>
 
-              {/* STATISTIQUES */}
-              <div>
-                <h3 className="font-semibold text-sm">Statistiques</h3>
-                <ul className="text-xs space-y-1">
-                  <li>Total doléances : {formatInt(villeReport?.statistiques?.totalDoleances)}</li>
-                  <li>Taux critique : {formatPercent(villeReport?.statistiques?.tauxCritique)}</li>
-                  <li>Taux résolution : {formatPercent(villeReport?.statistiques?.tauxResolution)}</li>
-                  <li>Tendance : {villeReport?.statistiques?.tendance ?? "—"}</li>
-                </ul>
-              </div>
+                  {/* SYNTHÈSE */}
+                  <div>
+                    <h3 className="font-semibold text-sm">Synthèse RAG</h3>
+                    <ul className="text-xs space-y-1">
+                      <li className="flex justify-between">
+                        <span>Santé</span>
+                        <span className="flex items-center gap-2">
+                          <span className="w-3 h-3 bg-red-500 rounded-full"></span>
+                          {formatInt(villeReport?.rag?.sante?.total)}
+                        </span>
+                      </li>
+                      <li className="flex justify-between">
+                        <span>Éducation</span>
+                        <span className="flex items-center gap-2">
+                          <span className="w-3 h-3 bg-green-500 rounded-full"></span>
+                          {formatInt(villeReport?.rag?.education?.total)}
+                        </span>
+                      </li>
+                      <li className="flex justify-between">
+                        <span>Autres</span>
+                        <span className="flex items-center gap-2">
+                          <span className="w-3 h-3 bg-green-500 rounded-full"></span>
+                          {formatInt(villeReport?.rag?.autres?.total)}
+                        </span>
+                      </li>
+                      <li className="flex justify-between">
+                        <span>Infrastructure</span>
+                        <span className="flex items-center gap-2">
+                          <span className="w-3 h-3 bg-orange-500 rounded-full"></span>
+                          {formatInt(villeReport?.rag?.infrastructure?.total)}
+                        </span>
+                      </li>
+                      <li className="flex justify-between">
+                        <span>Agriculture</span>
+                        <span className="flex items-center gap-2">
+                          <span className="w-3 h-3 bg-lime-600 rounded-full"></span>
+                          {formatInt(villeReport?.rag?.agriculture?.total)}
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
 
-              {/* ANALYSE IA */}
-              <div>
-                <h3 className="font-semibold text-sm">Analyse IA</h3>
-                <p className="text-xs text-gray-600">
-                  {villeReport?.analyse || "Analyse non disponible"}
-                </p>
-              </div>
+                  {/* STATISTIQUES */}
+                  <div>
+                    <h3 className="font-semibold text-sm">Statistiques</h3>
+                    <ul className="text-xs space-y-1">
+                      <li>Total doléances : {formatInt(villeReport?.statistiques?.totalDoleances)}</li>
+                      <li>Taux critique : {formatPercent(villeReport?.statistiques?.tauxCritique)}</li>
+                      <li>Taux résolution : {formatPercent(villeReport?.statistiques?.tauxResolution)}</li>
+                      <li>Tendance : {villeReport?.statistiques?.tendance ?? "—"}</li>
+                    </ul>
+                  </div>
+
+                  {/* ANALYSE IA */}
+                  <div>
+                    <h3 className="font-semibold text-sm">Analyse IA</h3>
+                    <p className="text-xs text-gray-600">
+                      {villeReport?.analyse || "Analyse non disponible"}
+                    </p>
+                  </div>
+                </>
+              )}
 
               {reportError && (
                 <div className="mt-2 text-xs text-destructive break-words">
