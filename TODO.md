@@ -1,10 +1,9 @@
-# TODO: Supprimer la page indicateur
+# Optimisation Performance n8n — TODO
 
-## Steps:
-- [x] Confirm plan with user
-- [x] Create TODO.md with steps
-- [x] Delete app/indicateur/ directory
-- [x] Verify deletion by listing app/ directories (no 'indicateur/' in app/ contents)
-- [x] Test app (optional: confirm 404 on /indicateur)
-- [x] Mark complete
+- [x] Phase 0 : Analyse complète du codebase
+- [ ] Phase 1 : Créer `lib/n8n-client.ts` (cache, dedup, abort, timeout)
+- [ ] Phase 2 : Optimiser les routes API Next.js (timeout, keep-alive, parsing propre)
+- [ ] Phase 3 : Refactor `components/cartographie/leaflet-map.tsx` (utiliser n8n-client, abort, lazy RAG)
+- [ ] Phase 4 : Refactor `components/cartographie/cartographie-content.tsx` (utiliser n8n-client, abort, parallel calls)
+- [ ] Phase 5 : Tester et vérifier la cohérence
 
