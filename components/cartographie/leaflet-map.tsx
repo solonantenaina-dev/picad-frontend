@@ -840,54 +840,67 @@ export default function LeafletMap({ onAreaSelect, layers, showHeatmap, selected
             currentData?.features.findIndex((f) => f === feature) || 0;
           target.setStyle(getFeatureStyle(feature, index));
         },
-        click: async (e: LeafletMouseEvent) => {
+        click: (e: LeafletMouseEvent) => {
           const target = e.target;
           const featureBounds = target.getBounds();
-          let result: unknown = null;
-          let errorMessage: string | undefined;
 
           if (viewLevel === "regions") {
             setSelectedRegion({ id: featureId, name: displayName });
             setViewLevel("districts");
             setBounds(featureBounds);
-            try {
-              result = await sendRegionToN8n(displayName);
-            } catch (err) {
-              errorMessage = err instanceof Error ? err.message : String(err);
-            }
-            setLastN8nResult({
-              level: "region",
-              name: displayName,
-              response: result,
-              error: errorMessage,
-            });
+            sendRegionToN8n(displayName)
+              .then((response) => {
+                setLastN8nResult({
+                  level: "region",
+                  name: displayName,
+                  response,
+                });
+              })
+              .catch((err) => {
+                setLastN8nResult({
+                  level: "region",
+                  name: displayName,
+                  response: null,
+                  error: err instanceof Error ? err.message : String(err),
+                });
+              });
           } else if (viewLevel === "districts") {
             setSelectedDistrict({ id: featureId, name: displayName });
             setViewLevel("communes");
             setBounds(featureBounds);
-            try {
-              result = await sendDistrictToN8n(displayName);
-            } catch (err) {
-              errorMessage = err instanceof Error ? err.message : String(err);
-            }
-            setLastN8nResult({
-              level: "district",
-              name: displayName,
-              response: result,
-              error: errorMessage,
-            });
+            sendDistrictToN8n(displayName)
+              .then((response) => {
+                setLastN8nResult({
+                  level: "district",
+                  name: displayName,
+                  response,
+                });
+              })
+              .catch((err) => {
+                setLastN8nResult({
+                  level: "district",
+                  name: displayName,
+                  response: null,
+                  error: err instanceof Error ? err.message : String(err),
+                });
+              });
           } else if (viewLevel === "communes") {
-            try {
-              result = await fetchVilleReport(displayName);
-            } catch (err) {
-              errorMessage = err instanceof Error ? err.message : String(err);
-            }
-            setLastN8nResult({
-              level: "commune",
-              name: displayName,
-              response: result,
-              error: errorMessage,
-            });
+            fetchVilleReport(displayName)
+              .then((response) => {
+                setLastN8nResult({
+                  level: "commune",
+                  name: displayName,
+                  response,
+                });
+              })
+              .catch((err) => {
+                setLastN8nResult({
+                  level: "commune",
+                  name: displayName,
+                  response: null,
+                  error: err instanceof Error ? err.message : String(err),
+                });
+              });
           }
 
           onAreaSelect?.({

@@ -357,7 +357,6 @@ export default function CartographieContent() {
         setVilleReport(null);
         setReportError(null);
         setReportLoading(true);
-        sendRegionToN8n(regionName); // Keep for map zoom/other logic
         try {
           const report = await sendRegionReport(regionName);
           setVilleReport(report);
