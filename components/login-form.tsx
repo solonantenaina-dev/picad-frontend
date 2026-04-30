@@ -87,12 +87,51 @@ export default function LoginForm() {
 
     try {
       console.log("Tentative de connexion avec:", formData);
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      
+      // Call the real n8n API
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
 
-      document.cookie = "auth-token=simulated-token; path=/; max-age=86400";
+      const data = await response.json();
+
+      console.log("=== LOGIN API RESPONSE ===");
+      console.log("Full response:", data);
+      console.log("Token:", data.token);
+      console.log("User:", data.user);
+
+      if (!response.ok || data.error) {
+        setErrors({
+          email: "",
+          password: data.error || "Email ou mot de passe incorrect",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Store token and user info
+      if (data.token) {
+        document.cookie = `auth-token=${data.token}; path=/; max-age=86400`;
+      }
+      if (data.user) {
+        const userString = encodeURIComponent(JSON.stringify(data.user));
+        document.cookie = `auth-user=${userString}; path=/; max-age=86400`;
+      }
+      
       router.push("/");
     } catch (error) {
       console.error("Erreur de connexion:", error);
+      setErrors({
+        email: "",
+        password: "Une erreur est survenue lors de la connexion",
+      });
     } finally {
       setIsSubmitting(false);
     }

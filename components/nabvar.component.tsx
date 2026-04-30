@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -46,6 +46,20 @@ export function Navbar() {
   const selectedLang = ['fr','en','es'].includes(lang) ? lang.toUpperCase().replace('fr','FRA').replace('en','ENG').replace('es','ESP') : 'FRA';
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [userName, setUserName] = useState("Utilisateur");
+
+  useEffect(() => {
+    // Get user name from cookie
+    const userCookie = document.cookie.split('; ').find(row => row.startsWith('auth-user='));
+    if (userCookie) {
+      try {
+        const user = JSON.parse(decodeURIComponent(userCookie.split('=')[1]));
+        setUserName(user.nom || user.email || 'Utilisateur');
+      } catch {
+        setUserName('Utilisateur');
+      }
+    }
+  }, []);
 
   // Masquer la navbar sur les pages d'authentification (login et inscription)
   if (pathname === "/login" || pathname === "/inscription") {
@@ -56,6 +70,9 @@ export function Navbar() {
     // Supprimer le token d'authentification
     document.cookie =
       "auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    // Supprimer les infos utilisateur
+    document.cookie =
+      "auth-user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
 
     // Rediriger vers la page de login
     router.push("/login");
@@ -145,11 +162,14 @@ export function Navbar() {
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border border-gray-200">
                 <User className="h-5 w-5" />
-                <span className="font-medium">Aris</span>
+                <span className="font-medium">{userName}</span>
                 <ChevronDown className="h-4 w-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem className="cursor-pointer">
+                <DropdownMenuItem 
+                  className="cursor-pointer"
+                  onClick={() => router.push("/profil")}
+                >
                   <User className="h-4 w-4 mr-2" />
                   <TranslatedText text="Mon profil" />
                 </DropdownMenuItem>
