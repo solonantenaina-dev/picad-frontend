@@ -147,6 +147,10 @@ export default function ProfilePage() {
     },
   ];
 
+  const profileTitle = profile?.prenom || profile?.nom
+    ? `${profile?.prenom || ""} ${profile?.nom || ""}`.trim()
+    : "Mon Profil";
+
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
@@ -169,7 +173,7 @@ export default function ProfilePage() {
               </div>
             </div>
             <h1 className="text-center text-2xl font-bold text-white mt-4">
-              <TranslatedText text="Mon Profil" />
+              {profileTitle}
             </h1>
           </div>
 
