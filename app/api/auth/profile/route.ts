@@ -99,11 +99,12 @@ async function getProfileFromSupabase(token: string) {
       userProfile = Array.isArray(profileData) && profileData.length > 0 ? profileData[0] : null;
     }
 
-    return NextResponse.json({
+return NextResponse.json({
       user: {
         id: authData.id,
         email: authData.email,
         nom: userProfile?.nom || null,
+        prenom: userProfile?.prenom || userProfile?.Prenom || null,
         phone: userProfile?.Phone || userProfile?.phone || null,
       },
     });

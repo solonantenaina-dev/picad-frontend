@@ -36,6 +36,20 @@ import { TranslatedText } from "@/components/TranslatedText";
   { code: "MLG", label: "Malgache", target: "mg" },
 ];
 
+// Fonction pour lire les informations utilisateur depuis le cookie
+const getUserFromCookie = () => {
+  try {
+    const userCookie = document.cookie.split('; ').find(row => row.startsWith('auth-user='));
+    if (userCookie) {
+      const user = JSON.parse(decodeURIComponent(userCookie.split('=')[1]));
+      return user;
+    }
+  } catch {
+    // Erreur lors du parsing
+  }
+  return null;
+};
+
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -46,19 +60,20 @@ export function Navbar() {
   const selectedLang = ['fr','en','es'].includes(lang) ? lang.toUpperCase().replace('fr','FRA').replace('en','ENG').replace('es','ESP') : 'FRA';
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [userName, setUserName] = useState("Utilisateur");
+  
+  // Utiliser useState avec useEffect pour éviter l'hydration mismatch
+  // État initial vide qui sera remplacé après le montage côté client
+  const [userProfileName, setUserProfileName] = useState("");
+  const [isUserLoaded, setIsUserLoaded] = useState(false);
 
   useEffect(() => {
-    // Get user name from cookie
-    const userCookie = document.cookie.split('; ').find(row => row.startsWith('auth-user='));
-    if (userCookie) {
-      try {
-        const user = JSON.parse(decodeURIComponent(userCookie.split('=')[1]));
-        setUserName(user.nom || user.email || 'Utilisateur');
-      } catch {
-        setUserName('Utilisateur');
-      }
+    // Lire les informations utilisateur depuis le cookie après le montage
+    const userFromCookie = getUserFromCookie();
+    if (userFromCookie) {
+      const name = userFromCookie?.nom ? `${userFromCookie.prenom || ''} ${userFromCookie.nom}`.trim() : userFromCookie?.email || "";
+      setUserProfileName(name);
     }
+    setIsUserLoaded(true);
   }, []);
 
   // Masquer la navbar sur les pages d'authentification (login et inscription)
@@ -108,10 +123,10 @@ export function Navbar() {
           <div className="flex items-center gap-4">
             {/* Search */}
             <div className="flex items-center gap-2">
-              {isSearchOpen && (
+{isSearchOpen && (
                 <Input
                   type="text"
-              placeholder={<TranslatedText text="Rechercher..." />}
+                  placeholder="Rechercher..."
                   className="w-64 animate-in slide-in-from-right-2 duration-200"
                   autoFocus
                 />
@@ -119,7 +134,7 @@ export function Navbar() {
               <button
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
                 className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-              aria-label={isSearchOpen ? <TranslatedText text="Fermer la recherche" /> : <TranslatedText text="Rechercher" />}
+                aria-label={isSearchOpen ? "Fermer la recherche" : "Rechercher"}
               >
                 {isSearchOpen ? (
                   <X className="h-5 w-5" />
@@ -158,11 +173,11 @@ export function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* User Menu avec Déconnexion */}
+{/* User Menu avec Déconnexion */}
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border border-gray-200">
                 <User className="h-5 w-5" />
-                <span className="font-medium">{userName}</span>
+                <span className="font-medium">{userProfileName}</span>
                 <ChevronDown className="h-4 w-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">

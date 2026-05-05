@@ -6,9 +6,9 @@ import { User, Mail, Phone, ArrowLeft, Loader2 } from "lucide-react";
 import { TranslatedText } from "@/components/TranslatedText";
 
 interface UserProfile {
-  id?: string;
-  email?: string;
   nom?: string;
+  prenom?:string;
+  email?: string;
   phone?: string;
   [key: string]: unknown;
 }
@@ -126,24 +126,24 @@ export default function ProfilePage() {
 
   const profileFields = [
     {
-      label: "Email",
-      value: profile?.email,
-      icon: Mail,
-    },
-    {
       label: "Nom",
       value: profile?.nom,
       icon: User,
     },
     {
+      label: "Prénom",
+      value: profile?.prenom,
+      icon: User,
+    },
+    {
+      label: "Email",
+      value: profile?.email,
+      icon: Mail,
+    },
+    {
       label: "Téléphone",
       value: profile?.phone,
       icon: Phone,
-    },
-    {
-      label: "ID",
-      value: profile?.id,
-      icon: User,
     },
   ];
 
