@@ -27,10 +27,23 @@ export async function POST(request: NextRequest) {
     });
 
     const text = await response.text();
-    const contentType = response.headers.get("content-type") ?? "";
-    const data = contentType.includes("application/json")
-      ? JSON.parse(text || "{}")
-      : { message: text };
+    let data: any = {};
+
+    if (text && text.trim()) {
+      const contentType = response.headers.get("content-type") ?? "";
+      if (contentType.includes("application/json")) {
+        try {
+          data = JSON.parse(text);
+        } catch (jsonError) {
+          console.error("Erreur de parsing JSON dans login API:", jsonError);
+          data = { message: "Réponse JSON invalide du serveur d'authentification" };
+        }
+      } else {
+        data = { message: text };
+      }
+    } else {
+      data = { message: "Réponse vide du serveur d'authentification" };
+    }
 
     if (!response.ok) {
       return NextResponse.json(

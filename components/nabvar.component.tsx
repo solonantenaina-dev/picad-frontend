@@ -41,11 +41,17 @@ const getUserFromCookie = () => {
   try {
     const userCookie = document.cookie.split('; ').find(row => row.startsWith('auth-user='));
     if (userCookie) {
-      const user = JSON.parse(decodeURIComponent(userCookie.split('=')[1]));
-      return user;
+      const cookieValue = userCookie.split('=')[1];
+      if (cookieValue) {
+        const decodedValue = decodeURIComponent(cookieValue);
+        if (decodedValue && decodedValue.trim()) {
+          const user = JSON.parse(decodedValue);
+          return user;
+        }
+      }
     }
-  } catch {
-    // Erreur lors du parsing
+  } catch (error) {
+    console.error("Erreur lors du parsing du cookie utilisateur:", error);
   }
   return null;
 };
@@ -60,20 +66,35 @@ export function Navbar() {
   const selectedLang = ['fr','en','es'].includes(lang) ? lang.toUpperCase().replace('fr','FRA').replace('en','ENG').replace('es','ESP') : 'FRA';
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  
+
   // Utiliser useState avec useEffect pour éviter l'hydration mismatch
   // État initial vide qui sera remplacé après le montage côté client
   const [userProfileName, setUserProfileName] = useState("");
   const [isUserLoaded, setIsUserLoaded] = useState(false);
 
-  useEffect(() => {
-    // Lire les informations utilisateur depuis le cookie après le montage
+  const updateUserNameFromCookie = () => {
     const userFromCookie = getUserFromCookie();
-    if (userFromCookie) {
-      const name = userFromCookie?.nom ? `${userFromCookie.prenom || ''} ${userFromCookie.nom}`.trim() : userFromCookie?.email || "";
-      setUserProfileName(name);
-    }
+    const name = userFromCookie?.nom ? `${userFromCookie.prenom || ''} ${userFromCookie.nom}`.trim() : userFromCookie?.email || "";
+    setUserProfileName((current) => (current !== name ? name : current));
+  };
+
+  useEffect(() => {
+    updateUserNameFromCookie();
     setIsUserLoaded(true);
+
+    const authUserChanged = () => {
+      updateUserNameFromCookie();
+    };
+
+    window.addEventListener("auth-user-changed", authUserChanged);
+    const intervalId = window.setInterval(() => {
+      updateUserNameFromCookie();
+    }, 500);
+
+    return () => {
+      window.removeEventListener("auth-user-changed", authUserChanged);
+      window.clearInterval(intervalId);
+    };
   }, []);
 
   // Masquer la navbar sur les pages d'authentification (login et inscription)
@@ -88,6 +109,9 @@ export function Navbar() {
     // Supprimer les infos utilisateur
     document.cookie =
       "auth-user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+
+    setUserProfileName("");
+    window.dispatchEvent(new Event("auth-user-changed"));
 
     // Rediriger vers la page de login
     router.push("/login");
@@ -188,7 +212,10 @@ export function Navbar() {
                   <User className="h-4 w-4 mr-2" />
                   <TranslatedText text="Mon profil" />
                 </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">
+                <DropdownMenuItem 
+                  className="cursor-pointer"
+                  onClick={() => router.push("/parametres")}
+                >
                   <svg
                     className="h-4 w-4 mr-2"
                     fill="none"

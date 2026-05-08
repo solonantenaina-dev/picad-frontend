@@ -58,14 +58,29 @@ export default function ProfilePage() {
           // Update the cookie with fresh data
           const userString = encodeURIComponent(JSON.stringify(data.user));
           document.cookie = `auth-user=${userString}; path=/; max-age=86400`;
+          window.dispatchEvent(new Event("auth-user-changed"));
         } else if (data.error) {
           console.log("API error, falling back to cookie:", data.error);
           // Fall back to cookie data if API fails
           const userCookie = cookies.find((row) => row.startsWith("auth-user="));
           if (userCookie) {
             const cookieValue = userCookie.split("=")[1];
-            const userData = JSON.parse(decodeURIComponent(cookieValue));
-            setProfile(userData);
+            if (cookieValue) {
+              try {
+                const decodedValue = decodeURIComponent(cookieValue);
+                if (decodedValue && decodedValue.trim()) {
+                  const userData = JSON.parse(decodedValue);
+                  setProfile(userData);
+                } else {
+                  setError("Données utilisateur vides");
+                }
+              } catch (parseError) {
+                console.error("Erreur de parsing des données cookie:", parseError);
+                setError("Données utilisateur corrompues");
+              }
+            } else {
+              setError("Cookie utilisateur vide");
+            }
           } else {
             setError("Aucune donnée utilisateur trouvée. Veuillez vous reconnecter.");
           }
@@ -78,14 +93,24 @@ export default function ProfilePage() {
         const userCookie = cookies.find((row) => row.startsWith("auth-user="));
         if (userCookie) {
           const cookieValue = userCookie.split("=")[1];
-          try {
-            const userData = JSON.parse(decodeURIComponent(cookieValue));
-            setProfile(userData);
-          } catch (e) {
-            setError("Données utilisateur corrompues");
+          if (cookieValue) {
+            try {
+              const decodedValue = decodeURIComponent(cookieValue);
+              if (decodedValue && decodedValue.trim()) {
+                const userData = JSON.parse(decodedValue);
+                setProfile(userData);
+              } else {
+                setError("Données utilisateur vides");
+              }
+            } catch (parseError) {
+              console.error("Erreur de parsing des données cookie:", parseError);
+              setError("Données utilisateur corrompues. Veuillez vous reconnecter.");
+            }
+          } else {
+            setError("Cookie utilisateur vide");
           }
         } else {
-          setError("Erreur lors du chargement du profil");
+          setError("Erreur lors du chargement du profil. Veuillez vous reconnecter.");
         }
       } finally {
         setLoading(false);

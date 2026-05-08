@@ -40,9 +40,16 @@ export function LanguageProvider({ children }: Props) {
 
   // Persistent cache with localStorage
   useEffect(() => {
-    const saved = localStorage.getItem(`translation-cache-${lang}`);
-    if (saved) {
-      Object.assign(cache, JSON.parse(saved));
+    try {
+      const saved = localStorage.getItem(`translation-cache-${lang}`);
+      if (saved && saved.trim()) {
+        const parsedCache = JSON.parse(saved);
+        Object.assign(cache, parsedCache);
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement du cache de traduction:", error);
+      // Reset cache if corrupted
+      localStorage.removeItem(`translation-cache-${lang}`);
     }
   }, [lang]);
 

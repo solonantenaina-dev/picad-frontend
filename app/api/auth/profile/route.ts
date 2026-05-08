@@ -30,7 +30,26 @@ export async function GET(request: NextRequest) {
       return await getProfileFromSupabase(token);
     }
 
-    const data = await response.json();
+    let data: any = {};
+    const text = await response.text();
+
+    if (text && text.trim()) {
+      const contentType = response.headers.get("content-type") ?? "";
+      if (contentType.includes("application/json")) {
+        try {
+          data = JSON.parse(text);
+        } catch (jsonError) {
+          console.error("Erreur de parsing JSON dans profile API:", jsonError);
+          // Fallback to Supabase if JSON parsing fails
+          return await getProfileFromSupabase(token);
+        }
+      } else {
+        data = { message: text };
+      }
+    } else {
+      // Fallback to Supabase if response is empty
+      return await getProfileFromSupabase(token);
+    }
     
     if (data.user) {
       return NextResponse.json({ user: data.user });

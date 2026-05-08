@@ -100,7 +100,24 @@ export default function LoginForm() {
         }),
       });
 
-      const data = await response.json();
+      let data: any = {};
+      const text = await response.text();
+
+      if (text && text.trim()) {
+        const contentType = response.headers.get("content-type") ?? "";
+        if (contentType.includes("application/json")) {
+          try {
+            data = JSON.parse(text);
+          } catch (jsonError) {
+            console.error("Erreur de parsing JSON dans login form:", jsonError);
+            data = { error: "Réponse invalide du serveur" };
+          }
+        } else {
+          data = { error: text };
+        }
+      } else {
+        data = { error: "Réponse vide du serveur" };
+      }
 
       console.log("=== LOGIN API RESPONSE ===");
       console.log("Full response:", data);
@@ -124,7 +141,8 @@ export default function LoginForm() {
         const userString = encodeURIComponent(JSON.stringify(data.user));
         document.cookie = `auth-user=${userString}; path=/; max-age=86400`;
       }
-      
+
+      window.dispatchEvent(new Event("auth-user-changed"));
       router.push("/");
     } catch (error) {
       console.error("Erreur de connexion:", error);

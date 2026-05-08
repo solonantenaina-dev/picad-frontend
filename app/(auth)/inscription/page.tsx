@@ -190,8 +190,6 @@ export default function InscriptionPage() {
         throw new Error(errorData.message || "Erreur lors de l'inscription");
       }
 
-      const data = await response.json();
-
       setSubmitResult({
         success: true,
         message: "Inscription réussie ! Vous allez être redirigé...",
