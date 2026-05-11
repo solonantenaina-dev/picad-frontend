@@ -214,7 +214,7 @@ export function Navbar() {
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   className="cursor-pointer"
-                  onClick={() => router.push("/parametres")}
+                  onClick={() => router.push("/administrateur")}
                 >
                   <svg
                     className="h-4 w-4 mr-2"
@@ -235,7 +235,7 @@ export function Navbar() {
                       d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                     />
                   </svg>
-                  <TranslatedText text="Paramètres" />
+                  <TranslatedText text="Administration" />
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem

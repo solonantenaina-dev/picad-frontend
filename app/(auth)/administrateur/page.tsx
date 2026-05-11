@@ -16,7 +16,7 @@ interface User {
   [key: string]: unknown;
 }
 
-export default function ParametresPage() {
+export default function AdministrateurPage() {
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -213,19 +213,10 @@ export default function ParametresPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
-        {/* Back button */}
-        <button
-          onClick={() => router.push("/")}
-          className="flex items-center text-gray-600 hover:text-green-600 mb-6 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          <TranslatedText text="Retour" />
-        </button>
-
         {/* Page Title */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            <TranslatedText text="Paramètres" />
+            <TranslatedText text="Page d’administration" />
           </h1>
           <div className="w-24 h-1 bg-green-600 rounded-t-sm" />
         </div>

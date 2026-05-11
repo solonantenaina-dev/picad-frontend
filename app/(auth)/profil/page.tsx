@@ -179,15 +179,6 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
-        {/* Back button */}
-        <button
-          onClick={() => router.push("/")}
-          className="flex items-center text-gray-600 hover:text-green-600 mb-6 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          <TranslatedText text="Retour" />
-        </button>
-
         {/* Profile Card */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           {/* Header */}
