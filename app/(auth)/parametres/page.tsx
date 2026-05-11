@@ -24,6 +24,19 @@ export default function ParametresPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editForm, setEditForm] = useState<Partial<User>>({});
 
+  const safeParseJson = async (response: Response): Promise<any> => {
+    const text = await response.text();
+    if (!text) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch (err) {
+      console.error("JSON parse error:", text, err);
+      throw new Error("Réponse JSON invalide du serveur");
+    }
+  };
 
   const handleEdit = (user: User) => {
     setEditingUser(user);
@@ -56,7 +69,7 @@ export default function ParametresPage() {
         throw new Error("Erreur lors de la modification de l'utilisateur");
       }
 
-      const result = await response.json();
+      const result = await safeParseJson(response);
       console.log("Modification réussie:", result);
 
       // Mettre à jour l'utilisateur dans la liste locale
@@ -108,11 +121,11 @@ export default function ParametresPage() {
         throw new Error("Erreur lors de la suppression de l'utilisateur.");
       }
 
-      const data = await response.json();
+      const data = await safeParseJson(response);
       console.log("Suppression response:", data);
 
-      if (data.success !== true) {
-        throw new Error(data.message || "La suppression a échoué.");
+      if (!data || data.success !== true) {
+        throw new Error(data?.message || "La suppression a échoué.");
       }
 
       setUsers((currentUsers) => currentUsers.filter((current) => current.id !== user.id));
@@ -135,7 +148,7 @@ export default function ParametresPage() {
           throw new Error("Erreur lors du chargement de la liste des utilisateurs");
         }
 
-        const data = await response.json();
+        const data = await safeParseJson(response);
         console.log("RAW DATA:", data);
 
         const normalizeUser = (item: any): User | null => {
