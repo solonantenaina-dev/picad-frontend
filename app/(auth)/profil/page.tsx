@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { User, Mail, Phone, ArrowLeft, Loader2 } from "lucide-react";
+import { User, Mail, Phone, Loader2, CalendarDays, PencilLine } from "lucide-react";
 import { TranslatedText } from "@/components/TranslatedText";
 
 interface UserProfile {
+  id?: string;
   nom?: string;
   prenom?:string;
   email?: string;
@@ -17,7 +18,86 @@ export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editForm, setEditForm] = useState<Partial<UserProfile>>({});
+
+  const safeParseJson = async (response: Response): Promise<unknown> => {
+    const text = await response.text();
+    if (!text) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch (err) {
+      console.error("JSON parse error:", text, err);
+      throw new Error("Réponse JSON invalide du serveur");
+    }
+  };
+
+  const handleEdit = () => {
+    if (!profile) return;
+
+    setEditForm({
+      id: profile.id,
+      nom: profile.nom || "",
+      prenom: profile.prenom || "",
+      email: profile.email || "",
+      phone: profile.phone || "",
+    });
+    setIsEditing(true);
+    setEditError(null);
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setEditForm({});
+    setEditError(null);
+  };
+
+  const handleSave = async () => {
+    if (!profile?.id) {
+      setEditError("Impossible de modifier le profil sans identifiant.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const response = await fetch("https://n8n.itdcmada.com/webhook/modifier", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(editForm),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la modification du profil");
+      }
+
+      const result = await safeParseJson(response);
+      console.log("Modification profil réussie:", result);
+
+      const updatedProfile = { ...profile, ...editForm };
+      setProfile(updatedProfile);
+
+      const userString = encodeURIComponent(JSON.stringify(updatedProfile));
+      document.cookie = `auth-user=${userString}; path=/; max-age=86400`;
+      window.dispatchEvent(new Event("auth-user-changed"));
+
+      setIsEditing(false);
+      setEditForm({});
+      setEditError(null);
+    } catch (err) {
+      console.error("Erreur lors de la modification du profil:", err);
+      setEditError(err instanceof Error ? err.message : "Une erreur est survenue lors de la modification");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -72,17 +152,17 @@ export default function ProfilePage() {
                   const userData = JSON.parse(decodedValue);
                   setProfile(userData);
                 } else {
-                  setError("Données utilisateur vides");
+                  setLoadError("Données utilisateur vides");
                 }
               } catch (parseError) {
                 console.error("Erreur de parsing des données cookie:", parseError);
-                setError("Données utilisateur corrompues");
+                setLoadError("Données utilisateur corrompues");
               }
             } else {
-              setError("Cookie utilisateur vide");
+              setLoadError("Cookie utilisateur vide");
             }
           } else {
-            setError("Aucune donnée utilisateur trouvée. Veuillez vous reconnecter.");
+            setLoadError("Aucune donnée utilisateur trouvée. Veuillez vous reconnecter.");
           }
         }
       } catch (err) {
@@ -100,17 +180,17 @@ export default function ProfilePage() {
                 const userData = JSON.parse(decodedValue);
                 setProfile(userData);
               } else {
-                setError("Données utilisateur vides");
+                setLoadError("Données utilisateur vides");
               }
             } catch (parseError) {
               console.error("Erreur de parsing des données cookie:", parseError);
-              setError("Données utilisateur corrompues. Veuillez vous reconnecter.");
+              setLoadError("Données utilisateur corrompues. Veuillez vous reconnecter.");
             }
           } else {
-            setError("Cookie utilisateur vide");
+            setLoadError("Cookie utilisateur vide");
           }
         } else {
-          setError("Erreur lors du chargement du profil. Veuillez vous reconnecter.");
+          setLoadError("Erreur lors du chargement du profil. Veuillez vous reconnecter.");
         }
       } finally {
         setLoading(false);
@@ -133,11 +213,11 @@ export default function ProfilePage() {
     );
   }
 
-  if (error) {
+  if (loadError) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
+          <p className="text-red-600 mb-4">{loadError}</p>
           <button
             onClick={() => router.push("/login")}
             className="text-green-600 hover:underline"
@@ -154,69 +234,125 @@ export default function ProfilePage() {
       label: "Nom",
       value: profile?.nom,
       icon: User,
+      key: "nom",
     },
     {
       label: "Prénom",
       value: profile?.prenom,
       icon: User,
+      key: "prenom",
     },
     {
       label: "Email",
       value: profile?.email,
       icon: Mail,
+      key: "email",
     },
     {
       label: "Téléphone",
       value: profile?.phone,
       icon: Phone,
+      key: "phone",
     },
-  ];
+  ] as const;
 
   const profileTitle = profile?.prenom || profile?.nom
     ? `${profile?.prenom || ""} ${profile?.nom || ""}`.trim()
     : "Mon Profil";
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
-        {/* Profile Card */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          {/* Header */}
-          <div className="bg-green-600 px-6 py-8">
-            <div className="flex items-center justify-center">
-              <div className="h-20 w-20 rounded-full bg-white flex items-center justify-center">
-                <User className="h-10 w-10 text-green-600" />
-              </div>
+    <div className="min-h-screen bg-[#f5f6f8] py-8 px-4 sm:px-6">
+      <div className="max-w-[860px] mx-auto">
+        <div className="rounded-xl border border-[#eceff3] bg-white shadow-[0_2px_10px_rgba(15,23,42,0.06)] overflow-hidden">
+          <div className="relative bg-[#04a847] px-7 md:px-10 pt-9 pb-16">
+            <div className="absolute inset-0 opacity-[0.14]">
+              <div className="absolute right-20 bottom-0 h-28 w-56 rounded-t-full border border-white/70 border-b-0" />
+              <div className="absolute right-5 top-12 h-16 w-16 rounded-full border border-white/70" />
             </div>
-            <h1 className="text-center text-2xl font-bold text-white mt-4">
-              {profileTitle}
-            </h1>
+
+            <div className="relative flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+              <div className="flex items-center gap-5">
+                <div className="h-24 w-24 rounded-full bg-white flex items-center justify-center shadow-sm">
+                  <User className="h-11 w-11 text-[#0c9c46]" />
+                </div>
+                <div>
+                  <h1 className="text-[37px] leading-none font-semibold text-white">{profileTitle}</h1>
+                  <p className="mt-3 inline-flex items-center gap-2 text-white/85 text-sm">
+                    <CalendarDays className="h-[15px] w-[15px]" />
+                    <TranslatedText text="Membre depuis mai 2024" />
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={isEditing ? handleSave : handleEdit}
+                disabled={isSaving}
+                className="inline-flex items-center gap-2 rounded-lg bg-[#078b3c] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#067c36] disabled:cursor-not-allowed disabled:opacity-80"
+              >
+                <PencilLine className="h-4 w-4" />
+                <TranslatedText text={isSaving ? "Sauvegarde..." : isEditing ? "Sauvegarder" : "Modifier le profil"} />
+              </button>
+            </div>
           </div>
 
-          {/* Profile Table */}
-          <div className="px-6 py-6">
-            <table className="w-full">
+          <div className="-mt-8 px-5 pb-9 md:px-6">
+            {editError && (
+              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {editError}
+              </div>
+            )}
+
+            <table className="w-full overflow-hidden rounded-xl border border-[#e9edf2] bg-white shadow-[0_3px_10px_rgba(15,23,42,0.08)]">
               <tbody>
                 {profileFields.map((field, index) => (
                   <tr
                     key={field.label}
-                    className={index !== profileFields.length - 1 ? "border-b border-gray-200" : ""}
+                    className={index !== profileFields.length - 1 ? "border-b border-[#edf0f4]" : ""}
                   >
-                    <td className="py-4 pr-4 w-1/3">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <field.icon className="h-4 w-4" />
-                        <span className="font-medium">{field.label}</span>
+                    <td className="py-4 px-4 md:px-6 w-[42%]">
+                      <div className="flex items-center gap-3 text-gray-700">
+                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-[#eff8f3]">
+                          <field.icon className="h-5 w-5 text-[#1f7d4f]" />
+                        </span>
+                        <span className="font-medium text-[#2d3748]">{field.label}</span>
                       </div>
                     </td>
-                    <td className="py-4">
-                      <span className="text-gray-900">
-                        {field.value || "-"}
-                      </span>
+                    <td className="py-4 px-4 md:px-6">
+                      {isEditing ? (
+                        <input
+                          type={field.label === "Email" ? "email" : field.label === "Téléphone" ? "tel" : "text"}
+                          value={(editForm[field.key] as string) || ""}
+                          onChange={(e) =>
+                            setEditForm((prev) => ({
+                              ...prev,
+                              [field.key]: e.target.value,
+                            }))
+                          }
+                          className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm text-[#1f2937] outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20"
+                        />
+                      ) : (
+                        <span className="text-[#1f2937] font-medium">
+                          {field.value || "-"}
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+
+            {isEditing && (
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="inline-flex items-center rounded-md border border-gray-600 bg-gray-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-gray-700"
+                >
+                  <TranslatedText text="Annuler" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

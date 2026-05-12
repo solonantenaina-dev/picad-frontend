@@ -28,6 +28,12 @@ import { translations } from "@/lib/translations";
 
 const staticTranslations = translations;
 
+type TranslationLang = keyof typeof staticTranslations;
+
+function langKey(lang: string): TranslationLang {
+  return (lang in staticTranslations ? lang : "fr") as TranslationLang;
+}
+
 // Cache for dynamic translations
 const cache: Record<string, string> = {};
 
@@ -35,7 +41,8 @@ export function LanguageProvider({ children }: Props) {
   const [lang, setLang] = useState("fr");
 
   const t = useCallback((key: string) => {
-    return staticTranslations[lang]?.[key] || key;
+    const bundle = staticTranslations[langKey(lang)] as Record<string, string>;
+    return bundle[key] ?? key;
   }, [lang]);
 
   // Persistent cache with localStorage
@@ -61,7 +68,8 @@ export function LanguageProvider({ children }: Props) {
     if (lang === "fr") return text;
 
     // Check static first
-    const staticTrans = staticTranslations[lang]?.[text];
+    const bundle = staticTranslations[langKey(lang)] as Record<string, string>;
+    const staticTrans = bundle[text];
     if (staticTrans) return staticTrans;
 
     const key = `${text}-${lang}`;

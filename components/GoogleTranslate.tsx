@@ -11,15 +11,19 @@ export default function GoogleTranslate() {
       document.body.appendChild(script);
     };
 
-    // @ts-ignore
     window.googleTranslateElementInit = () => {
-      // @ts-ignore
-      new window.google.translate.TranslateElement({
-        pageLanguage: "fr",
-        autoDisplay: false,
-        includedLanguages: 'fr,en,es',
-        layout: google.translate.TranslateElement.InlineLayout.SIMPLE
-      }, "google_translate_element");
+      const g = window.google;
+      const TranslateElement = g?.translate?.TranslateElement;
+      if (!TranslateElement) return;
+      new TranslateElement(
+        {
+          pageLanguage: "fr",
+          autoDisplay: false,
+          includedLanguages: "fr,en,es",
+          layout: TranslateElement.InlineLayout.SIMPLE,
+        },
+        "google_translate_element",
+      );
     };
 
     addScript();
